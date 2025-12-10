@@ -2,57 +2,38 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { ProjectCard } from "@/components/dashboard/ProjectCard";
+import { ProjectsTable } from "@/components/dashboard/ProjectsTable";
 import { NewProjectModal } from "@/components/modals/NewProjectModal";
+import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/hooks/useProjects";
+import { toast } from "sonner";
 import type { Project } from "@/services/api";
 
 const Dashboard = () => {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [settingsProject, setSettingsProject] = useState<Project | null>(null);
   
   const {
     projects,
     stats,
     templates,
     isLoading,
+    refresh,
     createProject,
-    startBatch,
-    pauseProject,
-    resumeProject,
-    getTemplateName,
   } = useProjects();
 
   const handleCreateProject = async (data: Partial<Project>) => {
     await createProject(data);
   };
 
-  const handleStartBatch = async (projectId: number) => {
-    setActionLoading(projectId);
-    try {
-      await startBatch(projectId);
-    } finally {
-      setActionLoading(null);
-    }
+  const handleOpenSettings = (project: Project) => {
+    setSettingsProject(project);
   };
 
-  const handlePause = async (projectId: number) => {
-    setActionLoading(projectId);
-    try {
-      await pauseProject(projectId);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleResume = async (projectId: number) => {
-    setActionLoading(projectId);
-    try {
-      await resumeProject(projectId);
-    } finally {
-      setActionLoading(null);
-    }
+  const handleDelete = async (projectId: number) => {
+    // TODO: Implement delete API call
+    toast.info("Delete functionality coming soon");
   };
 
   if (isLoading) {
@@ -91,39 +72,13 @@ const Dashboard = () => {
             </Button>
           </div>
 
-          {projects.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/50 bg-card/30 p-12 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <Plus className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold">No projects yet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Create your first project to get started
-              </p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setIsNewProjectOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create Project
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  templateName={getTemplateName(project.templateId)}
-                  onStartBatch={() => handleStartBatch(project.id)}
-                  onPause={() => handlePause(project.id)}
-                  onResume={() => handleResume(project.id)}
-                  isLoading={actionLoading === project.id}
-                />
-              ))}
-            </div>
-          )}
+          <ProjectsTable
+            projects={projects}
+            isLoading={isLoading}
+            onRefresh={refresh}
+            onOpenSettings={handleOpenSettings}
+            onDelete={handleDelete}
+          />
         </section>
       </main>
 
@@ -133,6 +88,19 @@ const Dashboard = () => {
         templates={templates}
         onSubmit={handleCreateProject}
       />
+
+      {settingsProject && (
+        <ProjectSettingsModal
+          open={!!settingsProject}
+          onOpenChange={(open) => !open && setSettingsProject(null)}
+          project={settingsProject}
+          templates={templates}
+          onSave={async () => {
+            await refresh();
+            setSettingsProject(null);
+          }}
+        />
+      )}
     </div>
   );
 };
