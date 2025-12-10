@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { parseFolderId } from "@/services/api";
+import { parseFolderId, updateProject } from "@/services/api";
+import { toast } from "sonner";
 import type { Project, Template } from "@/services/api";
 
 interface ProjectSettingsModalProps {
@@ -46,6 +47,7 @@ export function ProjectSettingsModal({
     inputFolderId: project.inputFolderId,
     outputFolderUrl: project.outputFolderUrl,
     outputFolderId: project.outputFolderId,
+    trialCount: project.trialCount || 5,
   });
 
   // Reset form when project changes
@@ -59,6 +61,7 @@ export function ProjectSettingsModal({
       inputFolderId: project.inputFolderId,
       outputFolderUrl: project.outputFolderUrl,
       outputFolderId: project.outputFolderId,
+      trialCount: project.trialCount || 5,
     });
   }, [project]);
 
@@ -80,11 +83,30 @@ export function ProjectSettingsModal({
     });
   };
 
+  const handleTrialCountChange = (value: string) => {
+    const num = parseInt(value) || 1;
+    setFormData({
+      ...formData,
+      trialCount: Math.max(1, Math.min(10, num)),
+    });
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onSave(formData);
-      onOpenChange(false);
+      // Call the API directly with proper format
+      const result = await updateProject(project.id, formData);
+      
+      if (result.success) {
+        toast.success("Settings saved successfully");
+        await onSave(formData);
+        onOpenChange(false);
+      } else {
+        toast.error(result.message || "Failed to save settings");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save settings");
     } finally {
       setIsSaving(false);
     }
@@ -159,6 +181,23 @@ export function ProjectSettingsModal({
                 </Label>
               </div>
             </RadioGroup>
+          </div>
+
+          {/* Trial Images Count */}
+          <div className="space-y-2">
+            <Label htmlFor="trialCount">Trial Images</Label>
+            <Input
+              id="trialCount"
+              type="number"
+              min={1}
+              max={10}
+              value={formData.trialCount}
+              onChange={(e) => handleTrialCountChange(e.target.value)}
+              className="w-24"
+            />
+            <p className="text-xs text-muted-foreground">
+              Number of images to process in a trial (1-10)
+            </p>
           </div>
 
           {/* Input Folder URL */}
