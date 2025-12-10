@@ -146,7 +146,7 @@ export function FileListTable({
             : undefined,
           cost: historyItem?.cost,
           timeSeconds: historyItem?.timeSeconds,
-          prompt: (historyItem as any)?.generatedPrompt || (historyItem as any)?.generated_prompt,
+          prompt: historyItem?.generatedPrompt || undefined,
           optimizedDriveId: historyItem?.optimizedDriveId || undefined,
           optimizedUrl: historyItem?.optimizedUrl || undefined,
           completedAt: historyItem?.completedAt,
@@ -517,8 +517,8 @@ export function FileListTable({
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="flex items-center gap-1 text-left hover:bg-muted/50 rounded px-1 -mx-1 transition-colors group">
-                            <span className="text-[10px] text-muted-foreground truncate block max-w-[100px]">
-                              {file.prompt.slice(0, 30)}...
+                            <span className="text-[10px] text-muted-foreground truncate block max-w-[120px]">
+                              {file.prompt.length > 50 ? `${file.prompt.slice(0, 50)}...` : file.prompt}
                             </span>
                             <Expand className="h-2.5 w-2.5 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                           </button>
