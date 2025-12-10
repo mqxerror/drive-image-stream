@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Settings2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
   usageCount?: number;
@@ -49,6 +50,11 @@ export function Header({ usageCount = 0 }: HeaderProps) {
               <span className="font-semibold text-foreground">{usageCount}</span> images this month
             </span>
           </div>
+          <Link to="/api-config">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Settings2 className="h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
