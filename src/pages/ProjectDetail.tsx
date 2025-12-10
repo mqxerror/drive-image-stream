@@ -11,7 +11,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
-import { ImageGrid } from "@/components/ImageGrid";
+import { ProjectImageGrid } from "@/components/project/ProjectImageGrid";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
 import { getProjects, getTemplates, startTrial, updateProject } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
@@ -57,15 +57,15 @@ const ProjectDetail = () => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const handleStartTrial = async () => {
+  const handleStartTrial = async (selectedImageIds: string[]) => {
     if (!project) return;
     setActionLoading(true);
     try {
-      const result = await startTrial(project.id);
+      const result = await startTrial(project.id, selectedImageIds);
       if (result.success) {
         toast({ 
           title: "Trial started", 
-          description: result.message 
+          description: `Processing ${selectedImageIds.length} images...`
         });
         fetchData(); // Refresh project data
       } else {
@@ -196,13 +196,13 @@ const ProjectDetail = () => {
           )}
         </div>
 
-        {/* Image Grid / Empty State */}
+        {/* Image Grid */}
         <div className="animate-fade-in">
-          <ImageGrid
-            isEmpty={true}
+          <ProjectImageGrid
+            projectId={project.id}
             trialCount={project.trialCount || 5}
             onStartTrial={handleStartTrial}
-            isLoading={actionLoading}
+            isTrialLoading={actionLoading}
             inputFolderId={project.inputFolderId}
           />
         </div>
