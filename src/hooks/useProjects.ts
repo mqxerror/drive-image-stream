@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { api, getProjects, getStats, getTemplates, getSettings, createProject as apiCreateProject, triggerProcessing } from "@/services/api";
-import type { Project, Stats, Template, Settings } from "@/types";
+import { 
+  getProjects, 
+  getStats, 
+  getTemplates, 
+  createProject as apiCreateProject, 
+  triggerProcessing 
+} from "@/services/api";
+import type { Project, Stats, Template } from "@/services/api";
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -38,15 +43,6 @@ export function useProjects() {
     }
   }, []);
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      const data = await getSettings();
-      setSettings(data);
-    } catch (error) {
-      console.error("Failed to fetch settings:", error);
-    }
-  }, []);
-
   const refresh = useCallback(async () => {
     await Promise.all([fetchProjects(), fetchStats()]);
   }, [fetchProjects, fetchStats]);
@@ -58,13 +54,11 @@ export function useProjects() {
         fetchProjects(),
         fetchStats(),
         fetchTemplates(),
-        fetchSettings(),
       ]);
       setIsLoading(false);
     };
     init();
 
-    // Poll for updates
     const projectsInterval = setInterval(fetchProjects, 5000);
     const statsInterval = setInterval(fetchStats, 10000);
 
@@ -72,23 +66,11 @@ export function useProjects() {
       clearInterval(projectsInterval);
       clearInterval(statsInterval);
     };
-  }, [fetchProjects, fetchStats, fetchTemplates, fetchSettings]);
+  }, [fetchProjects, fetchStats, fetchTemplates]);
 
   const createProject = async (data: Partial<Project>) => {
     try {
-      const projectData = {
-        name: data.name || '',
-        inputFolderUrl: data.inputFolderUrl || '',
-        inputFolderId: data.inputFolderId || '',
-        outputFolderUrl: data.outputFolderUrl || '',
-        outputFolderId: data.outputFolderId || '',
-        templateId: data.templateId || null,
-        customPrompt: data.customPrompt || '',
-        status: data.status || 'draft',
-        resolution: data.resolution || '2K',
-        trialCount: data.trialCount || 5,
-      };
-      const project = await apiCreateProject(projectData);
+      const project = await apiCreateProject(data);
       setProjects((prev) => [...prev, project]);
       toast({
         title: "Project created",
@@ -125,7 +107,6 @@ export function useProjects() {
 
   const pauseProject = async (projectId: number) => {
     try {
-      // Note: Pause functionality needs to be added to API
       await fetchProjects();
       toast({
         title: "Project paused",
@@ -168,7 +149,6 @@ export function useProjects() {
     projects,
     stats,
     templates,
-    settings,
     isLoading,
     refresh,
     createProject,

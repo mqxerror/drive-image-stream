@@ -3,9 +3,10 @@ import { Plus, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
-import { NewProjectModal, NewProjectData } from "@/components/modals/NewProjectModal";
+import { NewProjectModal } from "@/components/modals/NewProjectModal";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/hooks/useProjects";
+import type { Project } from "@/services/api";
 
 const Dashboard = () => {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
@@ -15,7 +16,6 @@ const Dashboard = () => {
     projects,
     stats,
     templates,
-    settings,
     isLoading,
     createProject,
     startBatch,
@@ -24,7 +24,7 @@ const Dashboard = () => {
     getTemplateName,
   } = useProjects();
 
-  const handleCreateProject = async (data: NewProjectData) => {
+  const handleCreateProject = async (data: Partial<Project>) => {
     await createProject(data);
   };
 
@@ -68,7 +68,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header usageCount={stats?.processedToday} />
+      <Header usageCount={stats?.totalProcessed} />
 
       <main className="container px-4 py-8">
         {/* Stats Cards */}
@@ -132,8 +132,6 @@ const Dashboard = () => {
         onOpenChange={setIsNewProjectOpen}
         templates={templates}
         onSubmit={handleCreateProject}
-        cost2K={settings?.costPerImage2k}
-        cost4K={settings?.costPerImage4k}
       />
     </div>
   );
