@@ -27,6 +27,26 @@ const endpointMethods: Record<EndpointName, string> = {
   settings: 'GET, PUT',
 };
 
+const getTestConfig = (name: EndpointName): { method: string; body?: object } => {
+  switch (name) {
+    case 'trial':
+      return { method: 'POST', body: { projectId: 1 } };
+    case 'projectUpdate':
+      return { method: 'PUT', body: { projectId: 1, name: 'Test' } };
+    case 'trigger':
+      return { method: 'POST', body: {} };
+    case 'redo':
+      return { method: 'POST', body: { fileId: 'test' } };
+    case 'settings':
+      return { method: 'PUT', body: { key: 'resolution', value: '2K' } };
+    case 'templates':
+    case 'projects':
+      return { method: 'GET' }; // Use GET for testing these
+    default:
+      return { method: 'GET' };
+  }
+};
+
 export default function ApiConfigPage() {
   const { config, updateConfig, resetToDefaults } = useApiConfig();
   const [localConfig, setLocalConfig] = useState<ApiConfig>(config);
@@ -50,21 +70,34 @@ export default function ApiConfigPage() {
     setStatuses(prev => ({ ...prev, [name]: 'testing' }));
     
     const url = `${localConfig.baseUrl}${localConfig.endpoints[name]}`;
-    const method = endpointMethods[name].includes('GET') ? 'GET' : 'POST';
+    const testConfig = getTestConfig(name);
     
     try {
       const response = await fetch(url, {
-        method,
+        method: testConfig.method,
         headers: { 'Content-Type': 'application/json' },
-        ...(method === 'POST' ? { body: JSON.stringify({}) } : {}),
+        ...(testConfig.body ? { body: JSON.stringify(testConfig.body) } : {}),
       });
       
-      if (response.ok || response.status < 500) {
+      // Check if response is OK or has success in JSON
+      if (response.ok) {
         setStatuses(prev => ({ ...prev, [name]: 'success' }));
         toast.success(`${name} endpoint is reachable`);
       } else {
-        setStatuses(prev => ({ ...prev, [name]: 'error' }));
-        toast.error(`${name} endpoint returned ${response.status}`);
+        // Try to parse JSON for success field
+        try {
+          const data = await response.json();
+          if (data.success) {
+            setStatuses(prev => ({ ...prev, [name]: 'success' }));
+            toast.success(`${name} endpoint is reachable`);
+          } else {
+            setStatuses(prev => ({ ...prev, [name]: 'error' }));
+            toast.error(`${name} endpoint returned ${response.status}`);
+          }
+        } catch {
+          setStatuses(prev => ({ ...prev, [name]: 'error' }));
+          toast.error(`${name} endpoint returned ${response.status}`);
+        }
       }
     } catch {
       setStatuses(prev => ({ ...prev, [name]: 'error' }));
