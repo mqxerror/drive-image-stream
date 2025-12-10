@@ -10,6 +10,9 @@ import {
   ChevronDown,
   FileImage,
   Play,
+  Expand,
+  Copy,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,9 +37,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { getEndpoint } from "@/hooks/useApiConfig";
 import { getQueue, getHistory, triggerProcessing, type QueueItem, type HistoryItem } from "@/services/api";
 import { ImageDetailModal } from "@/components/modals/ImageDetailModal";
+import { SaveTemplateDialog } from "@/components/modals/SaveTemplateDialog";
 import { toast } from "sonner";
 
 export interface FileItem {
@@ -80,6 +89,8 @@ export function FileListTable({
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [selectedPromptForSave, setSelectedPromptForSave] = useState("");
 
   const fetchData = useCallback(async () => {
     if (!projectId) return;
@@ -166,25 +177,53 @@ export function FileListTable({
     });
   };
 
+  // Select all non-optimized files (pending, queued, processing, failed)
   const selectAllPending = () => {
-    const pendingIds = files.filter((f) => f.status === "pending").map((f) => f.id);
+    const pendingIds = files
+      .filter((f) => f.status !== "optimized")
+      .map((f) => f.id);
     setSelectedIds(new Set(pendingIds));
   };
 
   const deselectAll = () => setSelectedIds(new Set());
 
   const handleStartTrial = () => {
-    onStartTrial(Array.from(selectedIds));
-    toast.success(`${selectedIds.size} images added to queue`, {
+    const selectedArray = Array.from(selectedIds);
+    // Only queue non-optimized images
+    const validIds = selectedArray.filter(id => {
+      const file = files.find(f => f.id === id);
+      return file && file.status !== "optimized";
+    });
+    
+    if (validIds.length === 0) {
+      toast.error("No pending images selected");
+      return;
+    }
+    
+    onStartTrial(validIds);
+    toast.success(`${validIds.length} images added to queue`, {
       description: "Go to Dashboard to start processing",
     });
+    setSelectedIds(new Set());
   };
 
   const handleQueueAndProcess = async () => {
+    const selectedArray = Array.from(selectedIds);
+    // Only queue non-optimized images
+    const validIds = selectedArray.filter(id => {
+      const file = files.find(f => f.id === id);
+      return file && file.status !== "optimized";
+    });
+    
+    if (validIds.length === 0) {
+      toast.error("No pending images selected");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       // First queue the images
-      onStartTrial(Array.from(selectedIds));
+      onStartTrial(validIds);
       
       // Wait a moment for queue to update
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -192,7 +231,7 @@ export function FileListTable({
       // Then trigger processing
       const result = await triggerProcessing();
       if (result.success) {
-        toast.success(`Processing started! ${selectedIds.size} images queued`);
+        toast.success(`Processing started! ${validIds.length} images queued`);
         setSelectedIds(new Set());
         fetchData();
       } else {
@@ -203,6 +242,16 @@ export function FileListTable({
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const copyPromptToClipboard = (prompt: string) => {
+    navigator.clipboard.writeText(prompt);
+    toast.success("Prompt copied to clipboard");
+  };
+
+  const openSaveTemplateDialog = (prompt: string) => {
+    setSelectedPromptForSave(prompt);
+    setSaveTemplateOpen(true);
   };
 
   const filteredFiles = files.filter((f) => {
@@ -220,6 +269,12 @@ export function FileListTable({
     pending: files.filter((f) => f.status === "pending").length,
     failed: files.filter((f) => f.status === "failed").length,
   };
+
+  // Count only non-optimized selected items
+  const selectedNonOptimizedCount = Array.from(selectedIds).filter(id => {
+    const file = files.find(f => f.id === id);
+    return file && file.status !== "optimized";
+  }).length;
 
   const formatTime = (seconds?: number) => {
     if (!seconds) return "-";
@@ -256,6 +311,9 @@ export function FileListTable({
     setPreviewFile(file);
     setPreviewOpen(true);
   };
+
+  // Check if a file can be selected (not optimized)
+  const canSelect = (file: FileItem) => file.status !== "optimized";
 
   if (isLoading) {
     return (
@@ -319,7 +377,7 @@ export function FileListTable({
               Deselect
             </Button>
             <span className="text-xs text-muted-foreground ml-1">
-              {selectedIds.size} of {files.length} selected
+              {selectedNonOptimizedCount} of {stats.pending + stats.inProgress + stats.failed} selected
             </span>
           </div>
 
@@ -345,28 +403,28 @@ export function FileListTable({
               size="sm"
               className="h-7 text-xs"
               onClick={handleStartTrial}
-              disabled={selectedIds.size === 0 || isTrialLoading}
+              disabled={selectedNonOptimizedCount === 0 || isTrialLoading}
             >
               {isTrialLoading ? (
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               ) : (
                 <FlaskConical className="mr-1 h-3 w-3" />
               )}
-              Add to Queue ({selectedIds.size})
+              Add to Queue ({selectedNonOptimizedCount})
             </Button>
 
             <Button
               size="sm"
               className="h-7 text-xs bg-primary hover:bg-primary/90"
               onClick={handleQueueAndProcess}
-              disabled={selectedIds.size === 0 || isTrialLoading || isProcessing}
+              disabled={selectedNonOptimizedCount === 0 || isTrialLoading || isProcessing}
             >
               {isProcessing ? (
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               ) : (
                 <Play className="mr-1 h-3 w-3" />
               )}
-              Queue & Process ({selectedIds.size})
+              Queue & Process ({selectedNonOptimizedCount})
             </Button>
           </div>
         </div>
@@ -383,7 +441,7 @@ export function FileListTable({
                 <TableHead className="w-20 text-xs">Status</TableHead>
                 <TableHead className="w-14 text-xs text-right">Cost</TableHead>
                 <TableHead className="w-16 text-xs text-right">Time</TableHead>
-                <TableHead className="w-32 text-xs">Prompt</TableHead>
+                <TableHead className="w-40 text-xs">Prompt</TableHead>
                 <TableHead className="w-16 text-xs text-right pr-2">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -394,7 +452,7 @@ export function FileListTable({
                   className={`hover:bg-muted/30 border-border/30 ${getRowBorderClass(file.status)}`}
                 >
                   <TableCell className="pl-2 pr-1 py-1.5">
-                    {file.status === "pending" && (
+                    {canSelect(file) && (
                       <Checkbox
                         checked={selectedIds.has(file.id)}
                         onCheckedChange={() => toggleSelect(file.id)}
@@ -456,16 +514,45 @@ export function FileListTable({
                   </TableCell>
                   <TableCell className="py-1.5">
                     {file.prompt ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-[10px] text-muted-foreground truncate block max-w-[120px] cursor-help">
-                            {file.prompt.slice(0, 50)}...
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-sm">
-                          <p className="text-xs whitespace-pre-wrap">{file.prompt}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="flex items-center gap-1 text-left hover:bg-muted/50 rounded px-1 -mx-1 transition-colors group">
+                            <span className="text-[10px] text-muted-foreground truncate block max-w-[100px]">
+                              {file.prompt.slice(0, 30)}...
+                            </span>
+                            <Expand className="h-2.5 w-2.5 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent side="left" align="start" className="w-80 p-3">
+                          <div className="space-y-3">
+                            <div className="max-h-40 overflow-y-auto">
+                              <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                                {file.prompt}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] px-2"
+                                onClick={() => copyPromptToClipboard(file.prompt!)}
+                              >
+                                <Copy className="h-2.5 w-2.5 mr-1" />
+                                Copy
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] px-2"
+                                onClick={() => openSaveTemplateDialog(file.prompt!)}
+                              >
+                                <Save className="h-2.5 w-2.5 mr-1" />
+                                Save as Template
+                              </Button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <span className="text-[10px] text-muted-foreground/50">-</span>
                     )}
@@ -500,6 +587,14 @@ export function FileListTable({
           open={previewOpen}
           onOpenChange={setPreviewOpen}
           file={previewFile}
+          onSaveTemplate={openSaveTemplateDialog}
+        />
+
+        {/* Save Template Dialog */}
+        <SaveTemplateDialog
+          open={saveTemplateOpen}
+          onOpenChange={setSaveTemplateOpen}
+          prompt={selectedPromptForSave}
         />
       </div>
     </TooltipProvider>
