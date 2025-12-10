@@ -12,6 +12,7 @@ export interface ApiConfig {
     queue: string;
     history: string;
     trigger: string;
+    process: string;
     redo: string;
     settings: string;
   };
@@ -31,6 +32,7 @@ export const defaultApiConfig: ApiConfig = {
     queue: '/queue',
     history: '/history',
     trigger: '/trigger',
+    process: '/process',
     redo: '/redo',
     settings: '/settings',
   },

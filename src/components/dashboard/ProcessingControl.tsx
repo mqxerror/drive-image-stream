@@ -29,6 +29,7 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
   const [isStarting, setIsStarting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string>("all");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
   
   const costPerImage = 0.12;
 
@@ -77,25 +78,49 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
   };
 
   const executeProcessing = async () => {
+    const count = getProcessCount();
     setIsStarting(true);
+    setProcessingProgress({ current: 0, total: count });
+    
     try {
-      const result = await triggerProcessing();
-      if (result.success) {
-        toast.success("Processing started!", {
-          description: `${queueCount} images in queue`,
+      for (let i = 0; i < count; i++) {
+        setProcessingProgress({ current: i + 1, total: count });
+        
+        const response = await fetch(getEndpoint("process"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trigger: "manual" }),
         });
-        setIsProcessing(true);
-        onProcessingStarted?.();
-        // Start polling for updates
-        fetchQueueStatus();
-      } else {
-        toast.error(result.message || "Failed to start processing");
+
+        if (!response.ok) {
+          console.error(`Processing call ${i + 1} failed`);
+        }
+
+        // Wait 2 seconds between calls to avoid overwhelming
+        if (i < count - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        // Refresh the queue display
+        await fetchQueueStatus();
       }
+
+      toast.success(`Started processing ${count} images`);
+      setIsProcessing(true);
+      onProcessingStarted?.();
+      
+      // Auto-refresh after 30 seconds to update Recent Results
+      setTimeout(() => {
+        fetchQueueStatus();
+      }, 30000);
+      
     } catch (error) {
+      console.error("Processing error:", error);
       toast.error("Failed to start processing");
     } finally {
       setIsStarting(false);
       setShowConfirmDialog(false);
+      setProcessingProgress({ current: 0, total: 0 });
     }
   };
 
@@ -202,11 +227,18 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
               disabled={isStarting || isProcessing || queueCount === 0}
             >
               {isStarting ? (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  {processingProgress.total > 0 
+                    ? `Processing ${processingProgress.current}/${processingProgress.total}...`
+                    : "Starting..."}
+                </>
               ) : (
-                <Play className="mr-1 h-3 w-3" />
+                <>
+                  <Play className="mr-1 h-3 w-3" />
+                  {isProcessing ? "Processing..." : "Start Processing"}
+                </>
               )}
-              {isProcessing ? "Processing..." : "Start Processing"}
             </Button>
             <Button
               variant="outline"
