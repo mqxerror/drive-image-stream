@@ -1,7 +1,7 @@
 // Image Optimizer Pro - API Service
 // Connects to n8n webhooks at automator.pixelcraftedmedia.com
 
-const API_BASE = "https://automator.pixelcraftedmedia.com/webhook/image-optimizer";
+import { getEndpoint } from '@/hooks/useApiConfig';
 
 // Types
 export interface Settings {
@@ -146,14 +146,14 @@ function transformProject(data: any): Project {
 
 // Settings
 export async function getSettings(): Promise<Settings> {
-  const response = await fetch(`${API_BASE}/settings`);
+  const response = await fetch(getEndpoint('settings'));
   if (!response.ok) throw new Error("Failed to fetch settings");
   const data = await response.json();
   return transformSettings(data);
 }
 
 export async function updateSettings(settings: Partial<Settings>): Promise<void> {
-  const response = await fetch(`${API_BASE}/settings`, {
+  const response = await fetch(getEndpoint('settings'), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ settings }),
@@ -163,7 +163,7 @@ export async function updateSettings(settings: Partial<Settings>): Promise<void>
 
 // Stats - API returns: inQueue, processedToday, totalCost, avgTimeSeconds
 export async function getStats(): Promise<Stats> {
-  const response = await fetch(`${API_BASE}/stats`);
+  const response = await fetch(getEndpoint('stats'));
   if (!response.ok) throw new Error("Failed to fetch stats");
   const data = await response.json();
   return {
@@ -178,7 +178,7 @@ export async function getStats(): Promise<Stats> {
 
 // Templates
 export async function getTemplates(): Promise<Template[]> {
-  const response = await fetch(`${API_BASE}/templates`);
+  const response = await fetch(getEndpoint('templates'));
   if (!response.ok) throw new Error("Failed to fetch templates");
   const data = await response.json();
   const templates = data.templates || data || [];
@@ -186,7 +186,7 @@ export async function getTemplates(): Promise<Template[]> {
 }
 
 export async function createTemplate(template: Omit<Template, "id" | "usageCount">): Promise<Template> {
-  const response = await fetch(`${API_BASE}/templates`, {
+  const response = await fetch(getEndpoint('templates'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(template),
@@ -198,7 +198,7 @@ export async function createTemplate(template: Omit<Template, "id" | "usageCount
 
 // Projects
 export async function getProjects(): Promise<Project[]> {
-  const response = await fetch(`${API_BASE}/projects`);
+  const response = await fetch(getEndpoint('projects'));
   if (!response.ok) throw new Error("Failed to fetch projects");
   const data = await response.json();
   const projects = data.projects || data || [];
@@ -206,7 +206,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function createProject(project: Partial<Project>): Promise<Project> {
-  const response = await fetch(`${API_BASE}/projects`, {
+  const response = await fetch(getEndpoint('projects'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -228,7 +228,7 @@ export async function createProject(project: Partial<Project>): Promise<Project>
 
 // Update project - uses /project-update endpoint
 export async function updateProject(id: number, project: Partial<Project>): Promise<{ success: boolean; message: string; project?: Project }> {
-  const response = await fetch(`${API_BASE}/project-update`, {
+  const response = await fetch(getEndpoint('projectUpdate'), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -255,7 +255,7 @@ export async function updateProject(id: number, project: Partial<Project>): Prom
 
 // Start trial - processes up to 3 images from project's input folder
 export async function startTrial(projectId: number): Promise<{ success: boolean; message: string }> {
-  const response = await fetch(`${API_BASE}/trial`, {
+  const response = await fetch(getEndpoint('trial'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ projectId }),
@@ -270,7 +270,7 @@ export async function startTrial(projectId: number): Promise<{ success: boolean;
 
 // Queue
 export async function getQueue(): Promise<QueueItem[]> {
-  const response = await fetch(`${API_BASE}/queue`);
+  const response = await fetch(getEndpoint('queue'));
   if (!response.ok) throw new Error("Failed to fetch queue");
   const data = await response.json();
   return data.queue || data || [];
@@ -278,14 +278,14 @@ export async function getQueue(): Promise<QueueItem[]> {
 
 // History
 export async function getHistory(page = 1, limit = 20): Promise<{ history: HistoryItem[]; pagination: any }> {
-  const response = await fetch(`${API_BASE}/history?page=${page}&limit=${limit}`);
+  const response = await fetch(`${getEndpoint('history')}?page=${page}&limit=${limit}`);
   if (!response.ok) throw new Error("Failed to fetch history");
   return response.json();
 }
 
 // Trigger processing
 export async function triggerProcessing(): Promise<{ success: boolean; message: string }> {
-  const response = await fetch(`${API_BASE}/trigger`, {
+  const response = await fetch(getEndpoint('trigger'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
@@ -295,7 +295,7 @@ export async function triggerProcessing(): Promise<{ success: boolean; message: 
 
 // Redo image
 export async function redoImage(fileId: string, fileName: string): Promise<{ success: boolean; queueId: number }> {
-  const response = await fetch(`${API_BASE}/redo`, {
+  const response = await fetch(getEndpoint('redo'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ fileId, fileName }),

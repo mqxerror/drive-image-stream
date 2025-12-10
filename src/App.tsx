@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import ProjectDetail from "./pages/ProjectDetail";
 import Templates from "./pages/Templates";
-import Settings from "./pages/Settings";
+import ApiConfig from "./pages/ApiConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,7 +21,7 @@ const App = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/templates" element={<Templates />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/api-config" element={<ApiConfig />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
