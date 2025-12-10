@@ -24,13 +24,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { parseFolderId } from "@/services/api";
-import type { Template } from "@/types";
+import type { Template, Project } from "@/services/api";
 
 interface NewProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   templates: Template[];
-  onSubmit: (data: NewProjectData) => Promise<void>;
+  onSubmit: (data: Partial<Project>) => Promise<void>;
   cost2K?: number;
   cost4K?: number;
 }
@@ -38,11 +38,11 @@ interface NewProjectModalProps {
 export interface NewProjectData {
   name: string;
   inputFolderUrl: string;
-  inputFolderId: string;
+  inputFolderId: string | null;
   outputFolderUrl: string;
-  outputFolderId: string;
+  outputFolderId: string | null;
   templateId: number | null;
-  customPrompt: string | null;
+  customPrompt: string;
   resolution: '2K' | '4K';
   trialCount: number;
 }
@@ -60,12 +60,12 @@ export function NewProjectModal({
   const [formData, setFormData] = useState<NewProjectData>({
     name: "",
     inputFolderUrl: "",
-    inputFolderId: "",
+    inputFolderId: null,
     outputFolderUrl: "",
-    outputFolderId: "",
+    outputFolderId: null,
     templateId: null,
-    customPrompt: null,
-    resolution: "4K",
+    customPrompt: "",
+    resolution: "2K",
     trialCount: 5,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,10 +75,14 @@ export function NewProjectModal({
     setFormData({
       ...formData,
       inputFolderUrl: url,
-      inputFolderId: folderId || "",
+      inputFolderId: folderId,
     });
-    if (folderId) {
-      setErrors({ ...errors, inputFolderUrl: "" });
+    if (url && !folderId) {
+      setErrors({ ...errors, inputFolderUrl: "Invalid Google Drive folder URL" });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors.inputFolderUrl;
+      setErrors(newErrors);
     }
   };
 
@@ -87,10 +91,14 @@ export function NewProjectModal({
     setFormData({
       ...formData,
       outputFolderUrl: url,
-      outputFolderId: folderId || "",
+      outputFolderId: folderId,
     });
-    if (folderId) {
-      setErrors({ ...errors, outputFolderUrl: "" });
+    if (url && !folderId) {
+      setErrors({ ...errors, outputFolderUrl: "Invalid Google Drive folder URL" });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors.outputFolderUrl;
+      setErrors(newErrors);
     }
   };
 
@@ -99,12 +107,6 @@ export function NewProjectModal({
     
     if (!formData.name.trim()) {
       newErrors.name = "Project name is required";
-    }
-    if (!formData.inputFolderId) {
-      newErrors.inputFolderUrl = "Valid Google Drive folder URL required";
-    }
-    if (!formData.outputFolderId) {
-      newErrors.outputFolderUrl = "Valid Google Drive folder URL required";
     }
     if (!formData.templateId && !formData.customPrompt?.trim()) {
       newErrors.template = "Select a template or write a custom prompt";
@@ -119,19 +121,30 @@ export function NewProjectModal({
     
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        name: formData.name,
+        inputFolderUrl: formData.inputFolderUrl,
+        inputFolderId: formData.inputFolderId,
+        outputFolderUrl: formData.outputFolderUrl,
+        outputFolderId: formData.outputFolderId,
+        templateId: formData.templateId,
+        customPrompt: formData.customPrompt,
+        resolution: formData.resolution,
+        trialCount: formData.trialCount,
+      });
       onOpenChange(false);
       setFormData({
         name: "",
         inputFolderUrl: "",
-        inputFolderId: "",
+        inputFolderId: null,
         outputFolderUrl: "",
-        outputFolderId: "",
+        outputFolderId: null,
         templateId: null,
-        customPrompt: null,
-        resolution: "4K",
+        customPrompt: "",
+        resolution: "2K",
         trialCount: 5,
       });
+      setShowCustomPrompt(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -159,48 +172,16 @@ export function NewProjectModal({
             )}
           </div>
 
-          {/* Input Folder */}
-          <div className="space-y-2">
-            <Label htmlFor="inputFolder">Input Folder (Google Drive link) *</Label>
-            <Input
-              id="inputFolder"
-              value={formData.inputFolderUrl}
-              onChange={(e) => handleInputUrlChange(e.target.value)}
-              placeholder="https://drive.google.com/drive/folders/abc123..."
-            />
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              Paste the full Drive folder URL
-            </p>
-            {errors.inputFolderUrl && (
-              <p className="text-sm text-destructive">{errors.inputFolderUrl}</p>
-            )}
-          </div>
-
-          {/* Output Folder */}
-          <div className="space-y-2">
-            <Label htmlFor="outputFolder">Output Folder (Google Drive link) *</Label>
-            <Input
-              id="outputFolder"
-              value={formData.outputFolderUrl}
-              onChange={(e) => handleOutputUrlChange(e.target.value)}
-              placeholder="https://drive.google.com/drive/folders/xyz789..."
-            />
-            {errors.outputFolderUrl && (
-              <p className="text-sm text-destructive">{errors.outputFolderUrl}</p>
-            )}
-          </div>
-
           {/* Template Selection */}
           <div className="space-y-2">
-            <Label>Prompt Template</Label>
+            <Label>Prompt Template *</Label>
             <Select
               value={formData.templateId?.toString() || ""}
               onValueChange={(value) => {
                 setFormData({
                   ...formData,
                   templateId: value ? parseInt(value) : null,
-                  customPrompt: null,
+                  customPrompt: "",
                 });
                 setShowCustomPrompt(false);
               }}
@@ -225,7 +206,7 @@ export function NewProjectModal({
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2">
                 <Textarea
-                  value={formData.customPrompt || ""}
+                  value={formData.customPrompt}
                   onChange={(e) => setFormData({
                     ...formData,
                     customPrompt: e.target.value,
@@ -262,6 +243,38 @@ export function NewProjectModal({
                 </Label>
               </div>
             </RadioGroup>
+          </div>
+
+          {/* Input Folder (Optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="inputFolder">Input Folder (Google Drive link)</Label>
+            <Input
+              id="inputFolder"
+              value={formData.inputFolderUrl}
+              onChange={(e) => handleInputUrlChange(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/abc123..."
+            />
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Optional - paste the full Drive folder URL
+            </p>
+            {errors.inputFolderUrl && (
+              <p className="text-sm text-destructive">{errors.inputFolderUrl}</p>
+            )}
+          </div>
+
+          {/* Output Folder (Optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="outputFolder">Output Folder (Google Drive link)</Label>
+            <Input
+              id="outputFolder"
+              value={formData.outputFolderUrl}
+              onChange={(e) => handleOutputUrlChange(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/xyz789..."
+            />
+            {errors.outputFolderUrl && (
+              <p className="text-sm text-destructive">{errors.outputFolderUrl}</p>
+            )}
           </div>
 
           {/* Trial Images */}
