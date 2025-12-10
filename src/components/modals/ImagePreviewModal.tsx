@@ -37,11 +37,11 @@ export function ImagePreviewModal({
   if (!image) return null;
 
   const originalUrl = image.fileId 
-    ? getThumbnailUrl(image.fileId, 600)
+    ? getThumbnailUrl(image.fileId)
     : null;
     
   const optimizedUrl = image.optimizedDriveId
-    ? getThumbnailUrl(image.optimizedDriveId, 600)
+    ? getThumbnailUrl(image.optimizedDriveId)
     : null;
 
   return (

@@ -10,24 +10,22 @@ interface StatsCardsProps {
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   const cards = [
     {
-      title: "Projects",
-      value: stats?.projectCount ?? 0,
+      title: "In Queue",
+      value: stats?.inQueue ?? 0,
       icon: Folder,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
-      title: "Processed",
-      value: stats?.processedThisMonth ?? 0,
-      suffix: "this month",
+      title: "Processed Today",
+      value: stats?.processedToday ?? 0,
       icon: Image,
       color: "text-success",
       bgColor: "bg-success/10",
     },
     {
-      title: "Cost",
-      value: `$${(stats?.totalCostThisMonth ?? 0).toFixed(2)}`,
-      suffix: "this month",
+      title: "Total Cost",
+      value: `$${(stats?.totalCost ?? 0).toFixed(2)}`,
       icon: DollarSign,
       color: "text-warning",
       bgColor: "bg-warning/10",
