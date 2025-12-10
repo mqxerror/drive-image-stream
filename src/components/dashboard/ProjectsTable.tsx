@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Play, 
-  Pause, 
   Settings2, 
   Trash2, 
   ExternalLink,
   Loader2,
   FlaskConical,
+  Folder,
 } from "lucide-react";
 import {
   Table,
@@ -31,6 +30,16 @@ interface ProjectsTableProps {
   onRefresh: () => void;
   onOpenSettings: (project: Project) => void;
   onDelete: (projectId: number) => void;
+}
+
+// Folder preview component - shows folder icon since we can't get folder thumbnails
+function FolderPreview({ folderId }: { folderId: string | null }) {
+  if (!folderId) return <span className="text-muted-foreground">-</span>;
+  return (
+    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+      <Folder className="h-5 w-5 text-muted-foreground" />
+    </div>
+  );
 }
 
 export function ProjectsTable({ 
@@ -60,12 +69,12 @@ export function ProjectsTable({
     }
   };
 
-  const handleRunTrial = async (projectId: number) => {
+  const handleRunTrial = async (projectId: number, trialCount: number) => {
     setActionLoading(projectId);
     try {
       const result = await startTrial(projectId);
       if (result.success) {
-        toast.success(result.message || "Trial started successfully");
+        toast.success(`Trial started! Processing ${trialCount} images...`);
         onRefresh();
       } else {
         toast.error(result.message || "Failed to start trial");
@@ -178,20 +187,7 @@ export function ProjectsTable({
                 />
               </TableCell>
               <TableCell>
-                <div className="h-10 w-10 rounded bg-muted flex items-center justify-center overflow-hidden">
-                  {project.totalImages > 0 ? (
-                    <img 
-                      src={`https://drive.google.com/thumbnail?id=${project.inputFolderId}&sz=w100`}
-                      alt="Preview"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">-</span>
-                  )}
-                </div>
+                <FolderPreview folderId={project.inputFolderId} />
               </TableCell>
               <TableCell className="font-medium">{project.name}</TableCell>
               <TableCell>
@@ -243,9 +239,9 @@ export function ProjectsTable({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleRunTrial(project.id)}
+                    onClick={() => handleRunTrial(project.id, project.trialCount || 5)}
                     disabled={actionLoading === project.id || project.status === 'processing'}
-                    title="Run Trial"
+                    title={`Run Trial (${project.trialCount || 5} images)`}
                   >
                     {actionLoading === project.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

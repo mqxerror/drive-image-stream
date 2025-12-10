@@ -188,9 +188,10 @@ const ProjectDetail = () => {
         <div className="animate-fade-in">
           <ImageGrid
             isEmpty={true}
-            trialCount={project.trialCount}
+            trialCount={project.trialCount || 5}
             onStartTrial={handleStartTrial}
             isLoading={actionLoading}
+            inputFolderId={project.inputFolderId}
           />
         </div>
       </main>
