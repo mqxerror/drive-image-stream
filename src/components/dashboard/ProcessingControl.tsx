@@ -96,13 +96,13 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
           console.error(`Processing call ${i + 1} failed`);
         }
 
-        // Wait 2 seconds between calls to avoid overwhelming
-        if (i < count - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-
-        // Refresh the queue display
+        // Refresh the queue display after each call
         await fetchQueueStatus();
+
+        // Wait 3 seconds between calls to avoid overwhelming
+        if (i < count - 1) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
       }
 
       toast.success(`Started processing ${count} images`);
