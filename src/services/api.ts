@@ -90,6 +90,7 @@ export interface HistoryItem {
   optimizedDriveId: string | null;
   thumbnailUrl: string | null;
   errorMessage: string | null;
+  generatedPrompt?: string | null;
 }
 
 // Transform functions for snake_case to camelCase conversion
@@ -308,11 +309,16 @@ export async function getQueue(): Promise<QueueItem[]> {
   return data.queue || data || [];
 }
 
-// History
+// History - transforms snake_case to camelCase for prompt field
 export async function getHistory(page = 1, limit = 20): Promise<{ history: HistoryItem[]; pagination: any }> {
   const response = await fetch(`${getEndpoint('history')}?page=${page}&limit=${limit}`);
   if (!response.ok) throw new Error("Failed to fetch history");
-  return response.json();
+  const data = await response.json();
+  const history = (data.history || []).map((item: any) => ({
+    ...item,
+    generatedPrompt: item.generatedPrompt || item.generated_prompt || null,
+  }));
+  return { history, pagination: data.pagination };
 }
 
 // Trigger processing
@@ -320,9 +326,14 @@ export async function triggerProcessing(): Promise<{ success: boolean; message: 
   const response = await fetch(getEndpoint('trigger'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "start" }),
   });
   if (!response.ok) throw new Error("Failed to trigger processing");
-  return response.json();
+  const data = await response.json();
+  return {
+    success: data.success !== false,
+    message: data.message || "Processing started",
+  };
 }
 
 // Redo image
