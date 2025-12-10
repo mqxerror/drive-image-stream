@@ -226,12 +226,13 @@ export async function createProject(project: Partial<Project>): Promise<Project>
   return transformProject(data.project || data);
 }
 
-// Update project
-export async function updateProject(id: number, project: Partial<Project>): Promise<Project> {
-  const response = await fetch(`${API_BASE}/projects/${id}`, {
+// Update project - uses /project-update endpoint
+export async function updateProject(id: number, project: Partial<Project>): Promise<{ success: boolean; message: string; project?: Project }> {
+  const response = await fetch(`${API_BASE}/project-update`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      projectId: id,
       name: project.name,
       input_folder_url: project.inputFolderUrl,
       input_folder_id: project.inputFolderId,
@@ -245,7 +246,26 @@ export async function updateProject(id: number, project: Partial<Project>): Prom
   });
   if (!response.ok) throw new Error("Failed to update project");
   const data = await response.json();
-  return transformProject(data.project || data);
+  return {
+    success: data.success ?? true,
+    message: data.message ?? "Project updated",
+    project: data.project ? transformProject(data.project) : undefined,
+  };
+}
+
+// Start trial - processes up to 3 images from project's input folder
+export async function startTrial(projectId: number): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(`${API_BASE}/trial`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ projectId }),
+  });
+  if (!response.ok) throw new Error("Failed to start trial");
+  const data = await response.json();
+  return {
+    success: data.success ?? false,
+    message: data.message ?? "Trial started",
+  };
 }
 
 // Queue
