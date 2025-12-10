@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -11,48 +12,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import { api } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { api, Settings as SettingsType } from "@/services/api";
+import type { Settings as SettingsType, Template, UsageStats } from "@/types";
 
 const Settings = () => {
+  const { toast } = useToast();
   const [settings, setSettings] = useState<SettingsType | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [usage, setUsage] = useState<UsageStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchData = async () => {
       try {
-        const data = await api.getSettings();
-        setSettings(data);
-      } catch (err) {
-        console.error("Failed to fetch settings:", err);
+        const [settingsData, templatesData, usageData] = await Promise.all([
+          api.getSettings(),
+          api.getTemplates(),
+          api.getUsageStats(),
+        ]);
+        setSettings(settingsData);
+        setTemplates(templatesData.templates);
+        setUsage(usageData);
+      } catch (error) {
+        console.error("Failed to fetch settings:", error);
         toast({
           title: "Error",
-          description: "Failed to load settings",
+          description: "Failed to load settings.",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSettings();
+    fetchData();
   }, [toast]);
 
   const handleSave = async () => {
     if (!settings) return;
+    
     setIsSaving(true);
     try {
       await api.updateSettings(settings);
       toast({
-        title: "Settings Saved",
-        description: "Your settings have been updated successfully",
+        title: "Settings saved",
+        description: "Your settings have been updated.",
       });
-    } catch (err) {
-      console.error("Failed to save settings:", err);
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save settings",
+        description: "Failed to save settings.",
         variant: "destructive",
       });
     } finally {
@@ -70,122 +81,103 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="container flex h-16 items-center gap-4 px-4">
-          <Link to="/">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Settings</h1>
-            <p className="text-xs text-muted-foreground">
-              Configure optimizer settings
-            </p>
-          </div>
-        </div>
-      </header>
+      <Header />
 
-      <main className="container max-w-2xl px-4 py-8">
-        <div className="space-y-6 rounded-lg border border-border bg-card p-6">
-          <div className="space-y-2">
-            <Label htmlFor="inputFolderId">Input Folder ID</Label>
-            <Input
-              id="inputFolderId"
-              value={settings?.inputFolderId ?? ""}
-              onChange={(e) =>
-                setSettings((prev) =>
-                  prev ? { ...prev, inputFolderId: e.target.value } : null
-                )
-              }
-              placeholder="Google Drive folder ID"
-            />
-          </div>
+      <main className="container px-4 py-8 max-w-2xl">
+        <h1 className="text-2xl font-bold mb-8">Settings</h1>
 
-          <div className="space-y-2">
-            <Label htmlFor="outputFolderId">Output Folder ID</Label>
-            <Input
-              id="outputFolderId"
-              value={settings?.outputFolderId ?? ""}
-              onChange={(e) =>
-                setSettings((prev) =>
-                  prev ? { ...prev, outputFolderId: e.target.value } : null
-                )
-              }
-              placeholder="Google Drive folder ID"
-            />
-          </div>
+        <div className="space-y-8">
+          {/* Default Settings */}
+          <Card className="p-6 border-border/50">
+            <h2 className="text-lg font-semibold mb-6">Default Settings</h2>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="cost2K">Cost per 2K Image ($)</Label>
-              <Input
-                id="cost2K"
-                type="number"
-                step="0.01"
-                min="0"
-                value={settings?.cost2K ?? 0}
-                onChange={(e) =>
-                  setSettings((prev) =>
-                    prev ? { ...prev, cost2K: parseFloat(e.target.value) || 0 } : null
-                  )
-                }
-              />
+            <div className="space-y-6">
+              {/* Default Resolution */}
+              <div className="space-y-3">
+                <Label>Default Resolution</Label>
+                <RadioGroup
+                  value={settings?.defaultResolution || '4K'}
+                  onValueChange={(value) => setSettings(prev => prev ? { ...prev, defaultResolution: value as '2K' | '4K' } : null)}
+                  className="flex gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="2K" id="res-2k" />
+                    <Label htmlFor="res-2k" className="font-normal cursor-pointer">
+                      2K (${settings?.cost2K?.toFixed(2) || '0.12'}/image)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="4K" id="res-4k" />
+                    <Label htmlFor="res-4k" className="font-normal cursor-pointer">
+                      4K (${settings?.cost4K?.toFixed(2) || '0.24'}/image)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Default Trial Count */}
+              <div className="space-y-2">
+                <Label htmlFor="trialCount">Default Trial Count</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="trialCount"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={settings?.defaultTrialCount || 5}
+                    onChange={(e) => setSettings(prev => prev ? { ...prev, defaultTrialCount: parseInt(e.target.value) || 5 } : null)}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">images</span>
+                </div>
+              </div>
+
+              {/* Default Template */}
+              <div className="space-y-2">
+                <Label>Default Template</Label>
+                <Select
+                  value={settings?.defaultTemplateId?.toString() || ''}
+                  onValueChange={(value) => setSettings(prev => prev ? { ...prev, defaultTemplateId: value ? parseInt(value) : null } : null)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.filter(t => t.isActive).map((template) => (
+                      <SelectItem key={template.id} value={template.id.toString()}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="cost4K">Cost per 4K Image ($)</Label>
-              <Input
-                id="cost4K"
-                type="number"
-                step="0.01"
-                min="0"
-                value={settings?.cost4K ?? 0}
-                onChange={(e) =>
-                  setSettings((prev) =>
-                    prev ? { ...prev, cost4K: parseFloat(e.target.value) || 0 } : null
-                  )
-                }
-              />
+          {/* Usage Stats */}
+          <Card className="p-6 border-border/50">
+            <h2 className="text-lg font-semibold mb-6">Usage This Month</h2>
+
+            <div className="space-y-4">
+              <div className="flex justify-between py-2 border-b border-border/30">
+                <span className="text-muted-foreground">Images Processed</span>
+                <span className="font-semibold">{usage?.imagesProcessed ?? 0}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/30">
+                <span className="text-muted-foreground">Total Cost</span>
+                <span className="font-semibold">${(usage?.totalCost ?? 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-muted-foreground">Average Time</span>
+                <span className="font-semibold">{usage?.avgTime ?? 0}s per image</span>
+              </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="space-y-2">
-            <Label htmlFor="defaultResolution">Default Resolution</Label>
-            <Select
-              value={settings?.defaultResolution ?? "2K"}
-              onValueChange={(value: "2K" | "4K") =>
-                setSettings((prev) =>
-                  prev ? { ...prev, defaultResolution: value } : null
-                )
-              }
-            >
-              <SelectTrigger id="defaultResolution">
-                <SelectValue placeholder="Select resolution" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2K">2K (2048px)</SelectItem>
-                <SelectItem value="4K">4K (4096px)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full gap-2"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save Settings
-              </>
-            )}
+          {/* Save Button */}
+          <Button onClick={handleSave} disabled={isSaving} className="w-full">
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Settings
           </Button>
         </div>
       </main>
