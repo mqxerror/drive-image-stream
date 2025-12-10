@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { ImageIcon, FlaskConical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 interface ImageGridProps {
   isEmpty: boolean;
@@ -14,25 +12,8 @@ export function ImageGrid({
   isEmpty, 
   trialCount, 
   onStartTrial, 
-  isLoading: externalLoading 
+  isLoading 
 }: ImageGridProps) {
-  const [isTrialLoading, setIsTrialLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handleStartTrial = async () => {
-    setIsTrialLoading(true);
-    // Simulate brief loading
-    await new Promise(resolve => setTimeout(resolve, 800));
-    toast({
-      title: "Trial started",
-      description: "Check back in a few minutes for your processed images",
-    });
-    setIsTrialLoading(false);
-    onStartTrial();
-  };
-
-  const isLoading = externalLoading || isTrialLoading;
-
   if (isEmpty) {
     return (
       <div className="rounded-xl border border-dashed border-border/50 bg-card/30 p-12 text-center">
@@ -45,7 +26,7 @@ export function ImageGrid({
         </p>
         <Button 
           className="mt-6 bg-teal-600 hover:bg-teal-700" 
-          onClick={handleStartTrial} 
+          onClick={onStartTrial} 
           disabled={isLoading}
           size="lg"
         >

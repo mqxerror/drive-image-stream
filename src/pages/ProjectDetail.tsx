@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ImageGrid } from "@/components/ImageGrid";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
-import { getProjects, getTemplates } from "@/services/api";
+import { getProjects, getTemplates, startTrial, updateProject } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Template } from "@/services/api";
 
@@ -60,10 +60,25 @@ const ProjectDetail = () => {
     if (!project) return;
     setActionLoading(true);
     try {
-      // Backend endpoint not ready yet - show toast
-      toast({ 
-        title: "Trial started", 
-        description: `Processing ${project.trialCount} trial images. This feature is coming soon.` 
+      const result = await startTrial(project.id);
+      if (result.success) {
+        toast({ 
+          title: "Trial started", 
+          description: result.message 
+        });
+        fetchData(); // Refresh project data
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to start trial",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to start trial",
+        variant: "destructive",
       });
     } finally {
       setActionLoading(false);
@@ -72,15 +87,31 @@ const ProjectDetail = () => {
 
   const handleSaveSettings = async (updates: Partial<Project>) => {
     if (!project) return;
-    // PUT endpoint doesn't exist yet - save locally only
-    setProject({ ...project, ...updates });
-    toast({
-      title: "Settings saved locally",
-      description: "Project editing will be available soon. Changes saved in your session.",
-    });
+    try {
+      const result = await updateProject(project.id, updates);
+      if (result.success) {
+        setProject(result.project || { ...project, ...updates });
+        toast({
+          title: "Settings saved",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to save settings",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive",
+      });
+    }
   };
 
-  const templateName = project?.templateId 
+  const templateName = project?.templateId
     ? templates.find((t) => t.id === project.templateId)?.name 
     : project?.templateName || "Custom Prompt";
 
