@@ -32,15 +32,6 @@ interface ProjectsTableProps {
   onDelete: (projectId: number) => void;
 }
 
-// Folder preview component - shows folder icon since we can't get folder thumbnails
-function FolderPreview({ folderId }: { folderId: string | null }) {
-  if (!folderId) return <span className="text-muted-foreground">-</span>;
-  return (
-    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-      <Folder className="h-5 w-5 text-muted-foreground" />
-    </div>
-  );
-}
 
 export function ProjectsTable({ 
   projects, 
@@ -103,33 +94,29 @@ export function ProjectsTable({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-border bg-card">
+      <div className="rounded-lg border border-border/40 bg-card/50">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"><Skeleton className="h-4 w-4" /></TableHead>
-              <TableHead className="w-16"><Skeleton className="h-4 w-12" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-24" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-12" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-12" /></TableHead>
-              <TableHead><Skeleton className="h-4 w-24" /></TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-10 py-2"><Skeleton className="h-3 w-3" /></TableHead>
+              <TableHead className="w-12 py-2"><Skeleton className="h-3 w-8" /></TableHead>
+              <TableHead className="py-2"><Skeleton className="h-3 w-20" /></TableHead>
+              <TableHead className="py-2"><Skeleton className="h-3 w-14" /></TableHead>
+              <TableHead className="py-2"><Skeleton className="h-3 w-10" /></TableHead>
+              <TableHead className="py-2"><Skeleton className="h-3 w-10" /></TableHead>
+              <TableHead className="py-2"><Skeleton className="h-3 w-16" /></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {[1, 2, 3].map((i) => (
               <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                <TableCell><Skeleton className="h-10 w-10 rounded" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-32" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-3 w-3" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-7 w-7 rounded" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-3 w-24" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-3 w-8" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-3 w-10" /></TableCell>
+                <TableCell className="py-2"><Skeleton className="h-6 w-20" /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -140,132 +127,125 @@ export function ProjectsTable({
 
   if (projects.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border/50 bg-card/30 p-12 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <FlaskConical className="h-6 w-6 text-muted-foreground" />
+      <div className="rounded-lg border border-dashed border-border/40 bg-card/30 p-8 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+          <FlaskConical className="h-5 w-5 text-muted-foreground" />
         </div>
-        <h3 className="font-semibold">No projects yet</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create your first project to get started with image optimization
+        <h3 className="text-sm font-semibold">No projects yet</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Create your first project to get started
         </p>
       </div>
     );
   }
 
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "bg-muted text-muted-foreground border-border";
+      case "processing":
+      case "trial":
+        return "bg-warning/20 text-warning border-warning/30";
+      case "completed":
+        return "bg-success/20 text-success border-success/30";
+      case "failed":
+        return "bg-destructive/20 text-destructive border-destructive/30";
+      case "paused":
+        return "bg-info/20 text-info border-info/30";
+      default:
+        return "bg-muted text-muted-foreground border-border";
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border/40 bg-card/50 overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="w-12">
+          <TableRow className="hover:bg-transparent border-border/40">
+            <TableHead className="w-10 py-2 px-3">
               <Checkbox 
                 checked={selectedIds.length === projects.length && projects.length > 0}
                 onCheckedChange={handleSelectAll}
+                className="h-3.5 w-3.5"
               />
             </TableHead>
-            <TableHead className="w-16">Preview</TableHead>
-            <TableHead>Project Name</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Input Folder</TableHead>
-            <TableHead>Output Folder</TableHead>
-            <TableHead className="text-center">Images</TableHead>
-            <TableHead className="text-right">Cost</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="w-12 py-2 px-2 text-xs">Preview</TableHead>
+            <TableHead className="py-2 px-2 text-xs">Project</TableHead>
+            <TableHead className="py-2 px-2 text-xs">Status</TableHead>
+            <TableHead className="py-2 px-2 text-xs text-center">Images</TableHead>
+            <TableHead className="py-2 px-2 text-xs text-right">Cost</TableHead>
+            <TableHead className="py-2 px-2 text-xs text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {projects.map((project) => (
             <TableRow 
               key={project.id}
-              className="cursor-pointer hover:bg-muted/50"
+              className="cursor-pointer hover:bg-muted/30 transition-colors border-border/30"
               onClick={() => navigate(`/projects/${project.id}`)}
             >
-              <TableCell onClick={(e) => e.stopPropagation()}>
+              <TableCell className="py-2 px-3" onClick={(e) => e.stopPropagation()}>
                 <Checkbox 
                   checked={selectedIds.includes(project.id)}
                   onCheckedChange={(checked) => handleSelectOne(project.id, checked as boolean)}
+                  className="h-3.5 w-3.5"
                 />
               </TableCell>
-              <TableCell>
-                <FolderPreview folderId={project.inputFolderId} />
+              <TableCell className="py-2 px-2">
+                <div className="h-7 w-7 rounded bg-muted/50 flex items-center justify-center">
+                  <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
               </TableCell>
-              <TableCell className="font-medium">{project.name}</TableCell>
-              <TableCell>
-                <StatusBadge status={project.status} />
+              <TableCell className="py-2 px-2">
+                <span className="text-xs font-medium">{project.name}</span>
               </TableCell>
-              <TableCell>
-                {project.inputFolderUrl ? (
-                  <a 
-                    href={project.inputFolderUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {getFolderName(project.inputFolderUrl)}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {project.outputFolderUrl ? (
-                  <a 
-                    href={project.outputFolderUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {getFolderName(project.outputFolderUrl)}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                <span className="text-sm">
-                  {project.processedImages}/{project.totalImages}
+              <TableCell className="py-2 px-2">
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${getStatusBadgeClass(project.status)}`}>
+                  {project.status}
                 </span>
               </TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCost(project.totalCost)}
+              <TableCell className="py-2 px-2 text-center">
+                <span className="text-xs text-muted-foreground">
+                  <span className="text-foreground font-medium">{project.processedImages}</span>
+                  /{project.totalImages}
+                </span>
               </TableCell>
-              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-end gap-1">
+              <TableCell className="py-2 px-2 text-right">
+                <span className="text-xs font-medium">{formatCost(project.totalCost)}</span>
+              </TableCell>
+              <TableCell className="py-2 px-2 text-right" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-end gap-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-6 w-6"
                     onClick={() => handleRunTrial(project.id, project.trialCount || 5)}
                     disabled={actionLoading === project.id || project.status === 'processing'}
                     title={`Run Trial (${project.trialCount || 5} images)`}
                   >
                     {actionLoading === project.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
-                      <FlaskConical className="h-4 w-4" />
+                      <FlaskConical className="h-3 w-3" />
                     )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-6 w-6"
                     onClick={() => onOpenSettings(project)}
                     title="Settings"
                   >
-                    <Settings2 className="h-4 w-4" />
+                    <Settings2 className="h-3 w-3" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
                     onClick={() => onDelete(project.id)}
                     title="Delete"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               </TableCell>

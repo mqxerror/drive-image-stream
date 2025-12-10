@@ -57,6 +57,10 @@ export interface Stats {
   successRate: number;
   averageProcessingTime: number;
   totalCost: number;
+  // New fields for dashboard
+  processingNow: number;
+  completedToday: number;
+  costToday: number;
 }
 
 export interface QueueItem {
@@ -167,12 +171,16 @@ export async function getStats(): Promise<Stats> {
   if (!response.ok) throw new Error("Failed to fetch stats");
   const data = await response.json();
   return {
-    totalProcessed: data.processedToday ?? data.totalProcessed ?? 0,
+    totalProcessed: data.totalProcessed ?? data.processedToday ?? 0,
     totalPending: data.inQueue ?? data.totalPending ?? 0,
-    totalFailed: 0, // Not available from API yet
+    totalFailed: data.totalFailed ?? 0,
     successRate: data.successRate ?? 100,
     averageProcessingTime: data.avgTimeSeconds ?? data.averageProcessingTime ?? 0,
     totalCost: data.totalCost ?? 0,
+    // New fields
+    processingNow: data.processingNow ?? data.processing ?? 0,
+    completedToday: data.completedToday ?? data.processedToday ?? 0,
+    costToday: data.costToday ?? data.totalCost ?? 0,
   };
 }
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { LiveActivity } from "@/components/dashboard/LiveActivity";
 import { ProjectsTable } from "@/components/dashboard/ProjectsTable";
 import { NewProjectModal } from "@/components/modals/NewProjectModal";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
@@ -39,9 +40,9 @@ const Dashboard = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -51,23 +52,28 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Header usageCount={stats?.totalProcessed} />
 
-      <main className="container px-4 py-8">
+      <main className="container px-3 py-4 lg:px-4 lg:py-6 max-w-7xl">
         {/* Stats Cards */}
         <section className="animate-fade-in">
           <StatsCards stats={stats} />
         </section>
 
+        {/* Live Activity */}
+        <section className="mt-4 animate-fade-in-delay-1">
+          <LiveActivity />
+        </section>
+
         {/* Projects Section */}
-        <section className="mt-8 animate-fade-in">
-          <div className="flex items-center justify-between mb-6">
+        <section className="mt-4 animate-fade-in-delay-2">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-xl font-semibold">My Projects</h2>
-              <p className="text-sm text-muted-foreground">
-                Manage your image optimization projects
+              <h2 className="text-base font-semibold">Projects</h2>
+              <p className="text-xs text-muted-foreground">
+                Manage image optimization projects
               </p>
             </div>
-            <Button onClick={() => setIsNewProjectOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="sm" onClick={() => setIsNewProjectOpen(true)}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
               New Project
             </Button>
           </div>
