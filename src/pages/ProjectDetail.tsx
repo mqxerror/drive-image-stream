@@ -11,7 +11,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
-import { ProjectImageGrid } from "@/components/project/ProjectImageGrid";
+import { FileListTable } from "@/components/project/FileListTable";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
 import { getProjects, getTemplates, startTrial, updateProject } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
@@ -196,9 +196,9 @@ const ProjectDetail = () => {
           )}
         </div>
 
-        {/* Image Grid */}
+        {/* File List Table */}
         <div className="animate-fade-in">
-          <ProjectImageGrid
+          <FileListTable
             projectId={project.id}
             trialCount={project.trialCount || 5}
             onStartTrial={handleStartTrial}
