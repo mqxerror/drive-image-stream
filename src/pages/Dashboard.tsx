@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { ProcessingControl } from "@/components/dashboard/ProcessingControl";
 import { LiveActivity } from "@/components/dashboard/LiveActivity";
 import { RecentResults } from "@/components/dashboard/RecentResults";
 import { ProjectsTable } from "@/components/dashboard/ProjectsTable";
@@ -56,6 +57,11 @@ const Dashboard = () => {
         {/* Stats Cards - 5 in a row */}
         <section className="animate-fade-in">
           <StatsCards stats={stats} />
+        </section>
+
+        {/* Processing Control */}
+        <section className="mt-3 animate-fade-in-delay-1">
+          <ProcessingControl onProcessingStarted={refresh} />
         </section>
 
         {/* Live Activity & Recent Results - side by side on desktop */}

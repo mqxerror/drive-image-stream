@@ -58,21 +58,31 @@ export function LiveActivity() {
   const isProcessingStatus = (status: string) => 
     status === "processing" || status === "optimizing";
 
+  const hasProcessingItems = items.some((item) => 
+    item.status === "processing" || item.status === "optimizing"
+  );
+
   return (
     <Card className="border-border/40 bg-card/50 p-3">
       <div className="flex items-center gap-2 mb-3">
         <div className="relative">
           <Activity className="h-3.5 w-3.5 text-success" />
-          <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+          {hasProcessingItems && (
+            <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+          )}
         </div>
         <h3 className="text-xs font-semibold">Live Activity</h3>
+        {hasProcessingItems && (
+          <span className="text-[9px] text-amber-400 animate-pulse ml-1">Processing Active</span>
+        )}
         {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />}
       </div>
 
       {items.length === 0 && !isLoading ? (
         <div className="text-center py-4 text-muted-foreground">
           <ImageIcon className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
-          <p className="text-[10px]">No active processing</p>
+          <p className="text-[10px]">Queue Empty</p>
+          <p className="text-[9px] mt-0.5">Add images to process</p>
         </div>
       ) : (
         <div className="space-y-1.5">

@@ -9,6 +9,7 @@ import {
   FlaskConical,
   ChevronDown,
   FileImage,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,8 +35,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getEndpoint } from "@/hooks/useApiConfig";
-import { getQueue, getHistory, type QueueItem, type HistoryItem } from "@/services/api";
+import { getQueue, getHistory, triggerProcessing, type QueueItem, type HistoryItem } from "@/services/api";
 import { ImageDetailModal } from "@/components/modals/ImageDetailModal";
+import { toast } from "sonner";
 
 export interface FileItem {
   id: string;
@@ -56,6 +58,7 @@ interface FileListTableProps {
   projectId: number;
   trialCount: number;
   onStartTrial: (selectedImageIds: string[]) => void;
+  onQueueAndProcess?: (selectedImageIds: string[]) => void;
   isTrialLoading?: boolean;
   inputFolderId?: string | null;
 }
@@ -66,6 +69,7 @@ export function FileListTable({
   projectId,
   trialCount,
   onStartTrial,
+  onQueueAndProcess,
   isTrialLoading,
   inputFolderId,
 }: FileListTableProps) {
@@ -75,6 +79,7 @@ export function FileListTable({
   const [filter, setFilter] = useState<FilterType>("all");
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!projectId) return;
@@ -168,7 +173,37 @@ export function FileListTable({
 
   const deselectAll = () => setSelectedIds(new Set());
 
-  const handleStartTrial = () => onStartTrial(Array.from(selectedIds));
+  const handleStartTrial = () => {
+    onStartTrial(Array.from(selectedIds));
+    toast.success(`${selectedIds.size} images added to queue`, {
+      description: "Go to Dashboard to start processing",
+    });
+  };
+
+  const handleQueueAndProcess = async () => {
+    setIsProcessing(true);
+    try {
+      // First queue the images
+      onStartTrial(Array.from(selectedIds));
+      
+      // Wait a moment for queue to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Then trigger processing
+      const result = await triggerProcessing();
+      if (result.success) {
+        toast.success(`Processing started! ${selectedIds.size} images queued`);
+        setSelectedIds(new Set());
+        fetchData();
+      } else {
+        toast.error("Failed to start processing");
+      }
+    } catch (error) {
+      toast.error("Failed to start processing");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const filteredFiles = files.filter((f) => {
     if (filter === "all") return true;
@@ -306,8 +341,9 @@ export function FileListTable({
             </DropdownMenu>
 
             <Button
+              variant="outline"
               size="sm"
-              className="h-7 text-xs bg-primary hover:bg-primary/90"
+              className="h-7 text-xs"
               onClick={handleStartTrial}
               disabled={selectedIds.size === 0 || isTrialLoading}
             >
@@ -316,7 +352,21 @@ export function FileListTable({
               ) : (
                 <FlaskConical className="mr-1 h-3 w-3" />
               )}
-              Start Trial ({selectedIds.size})
+              Add to Queue ({selectedIds.size})
+            </Button>
+
+            <Button
+              size="sm"
+              className="h-7 text-xs bg-primary hover:bg-primary/90"
+              onClick={handleQueueAndProcess}
+              disabled={selectedIds.size === 0 || isTrialLoading || isProcessing}
+            >
+              {isProcessing ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <Play className="mr-1 h-3 w-3" />
+              )}
+              Queue & Process ({selectedIds.size})
             </Button>
           </div>
         </div>
