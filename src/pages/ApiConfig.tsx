@@ -92,16 +92,24 @@ export default function ApiConfigPage() {
             toast.success(`${name} endpoint is reachable`);
           } else {
             setStatuses(prev => ({ ...prev, [name]: 'error' }));
-            toast.error(`${name} endpoint returned ${response.status}`);
+            toast.error(`${name} returned ${response.status}: ${data.message || 'Unknown error'}`);
           }
         } catch {
           setStatuses(prev => ({ ...prev, [name]: 'error' }));
           toast.error(`${name} endpoint returned ${response.status}`);
         }
       }
-    } catch {
+    } catch (error) {
       setStatuses(prev => ({ ...prev, [name]: 'error' }));
-      toast.error(`Failed to reach ${name} endpoint`);
+      
+      // Detect CORS or network errors
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        toast.error(`${name}: CORS error or server unreachable. The server may not allow requests from this origin.`, {
+          duration: 5000,
+        });
+      } else {
+        toast.error(`${name}: Network error - ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   };
 
