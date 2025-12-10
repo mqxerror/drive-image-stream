@@ -95,6 +95,9 @@ export function ProjectSettingsModal({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Changes are saved locally. Full editing coming soon.
+          </p>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
