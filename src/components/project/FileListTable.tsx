@@ -44,7 +44,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getEndpoint } from "@/hooks/useApiConfig";
-import { getQueue, getHistory, triggerProcessing, type QueueItem, type HistoryItem } from "@/services/api";
+import { getQueue, getHistory, processBatch, type QueueItem, type HistoryItem } from "@/services/api";
 import { ImageDetailModal } from "@/components/modals/ImageDetailModal";
 import { SaveTemplateDialog } from "@/components/modals/SaveTemplateDialog";
 import { toast } from "sonner";
@@ -237,22 +237,22 @@ export function FileListTable({
 
     setIsProcessing(true);
     try {
-      // First queue the images
-      onStartTrial(validIds);
-      
-      // Wait a moment for queue to update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Then trigger processing
-      const result = await triggerProcessing();
+      // Call the batch process endpoint directly
+      const result = await processBatch(projectId, validIds);
       if (result.success) {
-        toast.success(`Processing started! ${validIds.length} images queued`);
+        toast.success(`Processing started!`, {
+          description: `${validIds.length} images queued for processing`,
+        });
         setSelectedIds(new Set());
-        fetchData();
+        // Refresh after a short delay to allow backend to update
+        setTimeout(() => fetchData(), 1000);
       } else {
-        toast.error("Failed to start processing");
+        toast.error("Failed to start processing", {
+          description: result.message,
+        });
       }
     } catch (error) {
+      console.error("Batch process error:", error);
       toast.error("Failed to start processing");
     } finally {
       setIsProcessing(false);
