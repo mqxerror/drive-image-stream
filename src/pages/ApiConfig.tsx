@@ -18,6 +18,7 @@ const endpointMethods: Record<EndpointName, string> = {
   stats: 'GET',
   projects: 'GET, POST',
   projectUpdate: 'PUT',
+  projectImages: 'GET',
   templates: 'GET, POST',
   trial: 'POST',
   queue: 'GET',

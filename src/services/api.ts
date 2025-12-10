@@ -258,17 +258,36 @@ export async function updateProject(id: number, project: Partial<Project>): Prom
   };
 }
 
-// Start trial - processes up to 3 images from project's input folder
-export async function startTrial(projectId: number): Promise<{ success: boolean; message: string }> {
+// Project Images - fetches images from Google Drive folder
+export interface ProjectImage {
+  id: string;
+  name: string;
+  thumbnailUrl: string;
+  fullUrl: string;
+}
+
+export async function getProjectImages(projectId: number): Promise<{ success: boolean; totalImages: number; images: ProjectImage[] }> {
+  const response = await fetch(`${getEndpoint('projectImages')}?projectId=${projectId}`);
+  if (!response.ok) throw new Error("Failed to fetch project images");
+  const data = await response.json();
+  return {
+    success: data.success ?? true,
+    totalImages: data.totalImages ?? data.images?.length ?? 0,
+    images: data.images || [],
+  };
+}
+
+// Start trial - processes selected images from project's input folder
+export async function startTrial(projectId: number, imageIds?: string[]): Promise<{ success: boolean; message: string }> {
   const response = await fetch(getEndpoint('trial'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ projectId }),
+    body: JSON.stringify({ projectId, imageIds }),
   });
   if (!response.ok) throw new Error("Failed to start trial");
   const data = await response.json();
   return {
-    success: data.success ?? false,
+    success: data.success ?? true,
     message: data.message ?? "Trial started",
   };
 }
