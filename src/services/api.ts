@@ -226,6 +226,28 @@ export async function createProject(project: Partial<Project>): Promise<Project>
   return transformProject(data.project || data);
 }
 
+// Update project
+export async function updateProject(id: number, project: Partial<Project>): Promise<Project> {
+  const response = await fetch(`${API_BASE}/projects/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: project.name,
+      input_folder_url: project.inputFolderUrl,
+      input_folder_id: project.inputFolderId,
+      output_folder_url: project.outputFolderUrl,
+      output_folder_id: project.outputFolderId,
+      template_id: project.templateId,
+      custom_prompt: project.customPrompt,
+      resolution: project.resolution,
+      trial_count: project.trialCount,
+    }),
+  });
+  if (!response.ok) throw new Error("Failed to update project");
+  const data = await response.json();
+  return transformProject(data.project || data);
+}
+
 // Queue
 export async function getQueue(): Promise<QueueItem[]> {
   const response = await fetch(`${API_BASE}/queue`);
@@ -280,6 +302,7 @@ export const api = {
   createTemplate,
   getProjects,
   createProject,
+  updateProject,
   getQueue,
   getHistory,
   triggerProcessing,

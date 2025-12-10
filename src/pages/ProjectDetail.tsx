@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
   Settings,
-  FlaskConical,
   Loader2,
   ImageIcon,
 } from "lucide-react";
@@ -13,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ImageGrid } from "@/components/ImageGrid";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
-import { getProjects, getTemplates } from "@/services/api";
+import { getProjects, getTemplates, updateProject as apiUpdateProject } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Template } from "@/services/api";
 
@@ -72,13 +71,20 @@ const ProjectDetail = () => {
   };
 
   const handleSaveSettings = async (updates: Partial<Project>) => {
-    // Backend endpoint not ready yet - show toast
-    toast({
-      title: "Settings saved",
-      description: "Project settings have been updated. Full functionality coming soon.",
-    });
-    if (project) {
-      setProject({ ...project, ...updates });
+    if (!project) return;
+    try {
+      const updated = await apiUpdateProject(project.id, updates);
+      setProject(updated);
+      toast({
+        title: "Settings saved",
+        description: "Project settings have been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save project settings.",
+        variant: "destructive",
+      });
     }
   };
 

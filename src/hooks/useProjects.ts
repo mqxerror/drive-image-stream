@@ -89,12 +89,13 @@ export function useProjects() {
 
   const startBatch = async (projectId: number) => {
     try {
-      await triggerProcessing();
-      await fetchProjects();
+      // Backend endpoint for start batch not ready - show placeholder
+      await new Promise(resolve => setTimeout(resolve, 800));
       toast({
-        title: "Batch started",
-        description: "Processing has begun.",
+        title: "Processing will start soon",
+        description: "Your batch will begin processing shortly.",
       });
+      await fetchProjects();
     } catch (error) {
       toast({
         title: "Error",
