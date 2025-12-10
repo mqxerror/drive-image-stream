@@ -73,13 +73,21 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
       return;
     }
 
+    await executeProcessing();
+  };
+
+  const executeProcessing = async () => {
     setIsStarting(true);
     try {
       const result = await triggerProcessing();
       if (result.success) {
-        toast.success(`Processing started! ${queueCount} images in queue`);
+        toast.success("Processing started!", {
+          description: `${queueCount} images in queue`,
+        });
         setIsProcessing(true);
         onProcessingStarted?.();
+        // Start polling for updates
+        fetchQueueStatus();
       } else {
         toast.error(result.message || "Failed to start processing");
       }
@@ -239,7 +247,7 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="text-xs">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleStartProcessing} className="text-xs">
+            <AlertDialogAction onClick={executeProcessing} className="text-xs">
               Yes, Start Processing
             </AlertDialogAction>
           </AlertDialogFooter>

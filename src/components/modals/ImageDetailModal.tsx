@@ -6,10 +6,10 @@ import {
   DollarSign,
   Calendar,
   Monitor,
-  ChevronDown,
-  ChevronUp,
   RotateCcw,
   Download,
+  Copy,
+  Save,
 } from "lucide-react";
 import {
   Dialog,
@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { toast } from "sonner";
 
 interface FileItem {
   id: string;
@@ -41,11 +41,16 @@ interface ImageDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   file: FileItem | null;
+  onSaveTemplate?: (prompt: string) => void;
 }
 
-export function ImageDetailModal({ open, onOpenChange, file }: ImageDetailModalProps) {
+export function ImageDetailModal({ 
+  open, 
+  onOpenChange, 
+  file,
+  onSaveTemplate 
+}: ImageDetailModalProps) {
   const [showOriginal, setShowOriginal] = useState(false);
-  const [promptExpanded, setPromptExpanded] = useState(false);
 
   if (!file) return null;
 
@@ -75,6 +80,19 @@ export function ImageDetailModal({ open, onOpenChange, file }: ImageDetailModalP
   const getDownloadUrl = (driveId?: string) => {
     if (!driveId) return null;
     return `https://drive.google.com/uc?export=download&id=${driveId}`;
+  };
+
+  const copyPromptToClipboard = () => {
+    if (file.prompt) {
+      navigator.clipboard.writeText(file.prompt);
+      toast.success("Prompt copied to clipboard");
+    }
+  };
+
+  const handleSaveTemplate = () => {
+    if (file.prompt && onSaveTemplate) {
+      onSaveTemplate(file.prompt);
+    }
   };
 
   const resultImageUrl = getLargeImageUrl(file.optimizedDriveId);
@@ -204,33 +222,36 @@ export function ImageDetailModal({ open, onOpenChange, file }: ImageDetailModalP
 
               {/* AI Prompt Section */}
               {file.prompt && (
-                <Collapsible open={promptExpanded} onOpenChange={setPromptExpanded}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between h-8 px-2 text-xs font-medium"
-                    >
-                      AI Prompt Used
-                      {promptExpanded ? (
-                        <ChevronUp className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
-                  {!promptExpanded && (
-                    <p className="text-[10px] text-muted-foreground px-2 truncate">
-                      {file.prompt.slice(0, 100)}...
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground">AI Prompt Used</p>
+                  </div>
+                  <div className="p-3 rounded-md bg-muted/70 border border-border/40 max-h-32 overflow-y-auto">
+                    <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                      {file.prompt}
                     </p>
-                  )}
-                  <CollapsibleContent>
-                    <div className="mt-2 p-3 rounded-md bg-muted/70 border border-border/40">
-                      <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                        {file.prompt}
-                      </p>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs flex-1"
+                      onClick={copyPromptToClipboard}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy Prompt
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs flex-1"
+                      onClick={handleSaveTemplate}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      Save as Template
+                    </Button>
+                  </div>
+                </div>
               )}
 
               {/* Action Buttons */}
