@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { Activity, ImageIcon, Loader2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Activity, ImageIcon, Loader2, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useApiConfig } from "@/hooks/useApiConfig";
 
 interface ActivityItem {
@@ -25,8 +26,10 @@ export function LiveActivity() {
   const { getEndpoint } = useApiConfig();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchActivity = async () => {
+  const fetchActivity = useCallback(async (showRefreshState = false) => {
+    if (showRefreshState) setIsRefreshing(true);
     try {
       const response = await fetch(getEndpoint("queue"));
       if (response.ok) {
@@ -46,14 +49,18 @@ export function LiveActivity() {
       console.error("Failed to fetch activity:", error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  }, [getEndpoint]);
+
+  const handleRefresh = () => {
+    fetchActivity(true);
   };
 
   useEffect(() => {
     fetchActivity();
-    const interval = setInterval(fetchActivity, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    // No auto-polling - only refresh on user action
+  }, [fetchActivity]);
 
   const isProcessingStatus = (status: string) => 
     status === "processing" || status === "optimizing";
@@ -75,7 +82,16 @@ export function LiveActivity() {
         {hasProcessingItems && (
           <span className="text-[9px] text-amber-400 animate-pulse ml-1">Processing Active</span>
         )}
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-6 w-6 ml-auto" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
+        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       </div>
 
       {items.length === 0 && !isLoading ? (
