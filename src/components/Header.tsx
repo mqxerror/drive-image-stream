@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Sparkles, Settings, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +28,11 @@ export function Header({ onRefresh, onTrigger, isRefreshing, isTriggering }: Hea
         </div>
 
         <div className="flex items-center gap-2">
+          <Link to="/settings">
+            <Button variant="ghost" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
