@@ -161,18 +161,18 @@ export async function updateSettings(settings: Partial<Settings>): Promise<void>
   if (!response.ok) throw new Error("Failed to update settings");
 }
 
-// Stats - FIXED: endpoint is /stats not /stats/usage
+// Stats - API returns: inQueue, processedToday, totalCost, avgTimeSeconds
 export async function getStats(): Promise<Stats> {
   const response = await fetch(`${API_BASE}/stats`);
   if (!response.ok) throw new Error("Failed to fetch stats");
   const data = await response.json();
   return {
-    totalProcessed: data.totalProcessed ?? data.total_processed ?? data.processedToday ?? 0,
-    totalPending: data.totalPending ?? data.total_pending ?? data.inQueue ?? 0,
-    totalFailed: data.totalFailed ?? data.total_failed ?? 0,
-    successRate: data.successRate ?? data.success_rate ?? 0,
-    averageProcessingTime: data.averageProcessingTime ?? data.average_processing_time ?? data.avgTimeSeconds ?? 0,
-    totalCost: data.totalCost ?? data.total_cost ?? 0,
+    totalProcessed: data.processedToday ?? data.totalProcessed ?? 0,
+    totalPending: data.inQueue ?? data.totalPending ?? 0,
+    totalFailed: 0, // Not available from API yet
+    successRate: data.successRate ?? 100,
+    averageProcessingTime: data.avgTimeSeconds ?? data.averageProcessingTime ?? 0,
+    totalCost: data.totalCost ?? 0,
   };
 }
 

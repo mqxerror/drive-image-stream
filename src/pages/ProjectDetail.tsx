@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ImageGrid } from "@/components/ImageGrid";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
-import { getProjects, getTemplates, updateProject as apiUpdateProject } from "@/services/api";
+import { getProjects, getTemplates } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Template } from "@/services/api";
 
@@ -72,20 +72,12 @@ const ProjectDetail = () => {
 
   const handleSaveSettings = async (updates: Partial<Project>) => {
     if (!project) return;
-    try {
-      const updated = await apiUpdateProject(project.id, updates);
-      setProject(updated);
-      toast({
-        title: "Settings saved",
-        description: "Project settings have been updated.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save project settings.",
-        variant: "destructive",
-      });
-    }
+    // PUT endpoint doesn't exist yet - save locally only
+    setProject({ ...project, ...updates });
+    toast({
+      title: "Settings saved locally",
+      description: "Project editing will be available soon. Changes saved in your session.",
+    });
   };
 
   const templateName = project?.templateId 
