@@ -2,6 +2,60 @@ import type { Project, ProjectImage, Template, Stats, UsageStats, Settings } fro
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://automator.pixelcraftedmedia.com/webhook';
 
+// Snake case to camelCase converter
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+// Transform object keys from snake_case to camelCase
+function transformKeys<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) {
+    return obj as T;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => transformKeys(item)) as T;
+  }
+  
+  if (typeof obj === 'object') {
+    const transformed: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      const camelKey = toCamelCase(key);
+      transformed[camelKey] = transformKeys(value);
+    }
+    return transformed as T;
+  }
+  
+  return obj as T;
+}
+
+// CamelCase to snake_case converter for request bodies
+function toSnakeCase(str: string): string {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+// Transform object keys from camelCase to snake_case
+function transformKeysToSnake<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) {
+    return obj as T;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => transformKeysToSnake(item)) as T;
+  }
+  
+  if (typeof obj === 'object') {
+    const transformed: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      const snakeKey = toSnakeCase(key);
+      transformed[snakeKey] = transformKeysToSnake(value);
+    }
+    return transformed as T;
+  }
+  
+  return obj as T;
+}
+
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -15,111 +69,112 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return transformKeys<T>(data);
 }
 
 export const api = {
   // Projects
-  getProjects: () => fetchApi<{ projects: Project[] }>('/api/projects'),
+  getProjects: () => fetchApi<{ projects: Project[] }>('/image-optimizer/projects'),
   
-  getProject: (id: number) => fetchApi<Project>(`/api/projects/${id}`),
+  getProject: (id: number) => fetchApi<Project>(`/image-optimizer/projects/${id}`),
   
   createProject: (data: Partial<Project>) => 
-    fetchApi<Project>('/api/projects', {
+    fetchApi<Project>('/image-optimizer/projects', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformKeysToSnake(data)),
     }),
   
   updateProject: (id: number, data: Partial<Project>) => 
-    fetchApi<Project>(`/api/projects/${id}`, {
+    fetchApi<Project>(`/image-optimizer/projects/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformKeysToSnake(data)),
     }),
   
   deleteProject: (id: number) => 
-    fetchApi<{ success: boolean }>(`/api/projects/${id}`, {
+    fetchApi<{ success: boolean }>(`/image-optimizer/projects/${id}`, {
       method: 'DELETE',
     }),
   
   scanProjectFolder: (id: number) => 
-    fetchApi<{ totalImages: number }>(`/api/projects/${id}/scan`, {
+    fetchApi<{ totalImages: number }>(`/image-optimizer/projects/${id}/scan`, {
       method: 'POST',
     }),
   
   startTrial: (id: number) => 
-    fetchApi<{ success: boolean }>(`/api/projects/${id}/start-trial`, {
+    fetchApi<{ success: boolean }>(`/image-optimizer/projects/${id}/start-trial`, {
       method: 'POST',
     }),
   
   startBatch: (id: number) => 
-    fetchApi<{ success: boolean }>(`/api/projects/${id}/start-batch`, {
+    fetchApi<{ success: boolean }>(`/image-optimizer/projects/${id}/start-batch`, {
       method: 'POST',
     }),
   
   pauseProject: (id: number) => 
-    fetchApi<{ success: boolean }>(`/api/projects/${id}/pause`, {
+    fetchApi<{ success: boolean }>(`/image-optimizer/projects/${id}/pause`, {
       method: 'POST',
     }),
   
   resumeProject: (id: number) => 
-    fetchApi<{ success: boolean }>(`/api/projects/${id}/resume`, {
+    fetchApi<{ success: boolean }>(`/image-optimizer/projects/${id}/resume`, {
       method: 'POST',
     }),
 
   // Project Images
   getProjectImages: (projectId: number) => 
-    fetchApi<{ images: ProjectImage[] }>(`/api/projects/${projectId}/images`),
+    fetchApi<{ images: ProjectImage[] }>(`/image-optimizer/projects/${projectId}/images`),
   
   updateImage: (id: number, data: Partial<ProjectImage>) => 
-    fetchApi<ProjectImage>(`/api/images/${id}`, {
+    fetchApi<ProjectImage>(`/image-optimizer/images/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformKeysToSnake(data)),
     }),
   
   redoImage: (imageId: number, templateId?: number, customPrompt?: string) => 
-    fetchApi<{ success: boolean }>('/api/images/redo', {
+    fetchApi<{ success: boolean }>('/image-optimizer/images/redo', {
       method: 'POST',
-      body: JSON.stringify({ imageId, templateId, customPrompt }),
+      body: JSON.stringify(transformKeysToSnake({ imageId, templateId, customPrompt })),
     }),
   
   redoBulk: (imageIds: number[], templateId?: number, customPrompt?: string, saveAsTemplate?: { name: string }) => 
-    fetchApi<{ success: boolean }>('/api/images/redo-bulk', {
+    fetchApi<{ success: boolean }>('/image-optimizer/images/redo-bulk', {
       method: 'POST',
-      body: JSON.stringify({ imageIds, templateId, customPrompt, saveAsTemplate }),
+      body: JSON.stringify(transformKeysToSnake({ imageIds, templateId, customPrompt, saveAsTemplate })),
     }),
 
   // Templates
-  getTemplates: () => fetchApi<{ templates: Template[] }>('/api/templates'),
+  getTemplates: () => fetchApi<{ templates: Template[] }>('/image-optimizer/templates'),
   
   createTemplate: (data: Partial<Template>) => 
-    fetchApi<Template>('/api/templates', {
+    fetchApi<Template>('/image-optimizer/templates', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformKeysToSnake(data)),
     }),
   
   updateTemplate: (id: number, data: Partial<Template>) => 
-    fetchApi<Template>(`/api/templates/${id}`, {
+    fetchApi<Template>(`/image-optimizer/templates/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformKeysToSnake(data)),
     }),
   
   deleteTemplate: (id: number) => 
-    fetchApi<{ success: boolean }>(`/api/templates/${id}`, {
+    fetchApi<{ success: boolean }>(`/image-optimizer/templates/${id}`, {
       method: 'DELETE',
     }),
 
   // Stats
-  getStats: () => fetchApi<Stats>('/api/stats'),
+  getStats: () => fetchApi<Stats>('/image-optimizer/stats'),
   
-  getUsageStats: () => fetchApi<UsageStats>('/api/stats/usage'),
+  getUsageStats: () => fetchApi<UsageStats>('/image-optimizer/stats/usage'),
 
   // Settings
-  getSettings: () => fetchApi<Settings>('/api/settings'),
+  getSettings: () => fetchApi<Settings>('/image-optimizer/settings'),
   
   updateSettings: (settings: Partial<Settings>) => 
-    fetchApi<{ success: boolean }>('/api/settings', {
+    fetchApi<{ success: boolean }>('/image-optimizer/settings', {
       method: 'PUT',
-      body: JSON.stringify(settings),
+      body: JSON.stringify(transformKeysToSnake(settings)),
     }),
 };
 
