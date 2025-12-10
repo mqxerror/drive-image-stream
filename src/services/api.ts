@@ -34,10 +34,11 @@ export interface Project {
   id: number;
   name: string;
   inputFolderUrl: string;
-  inputFolderId: string;
+  inputFolderId: string | null;
   outputFolderUrl: string;
-  outputFolderId: string;
+  outputFolderId: string | null;
   templateId: number | null;
+  templateName?: string;
   customPrompt: string;
   status: string;
   resolution: string;
@@ -50,12 +51,12 @@ export interface Project {
 }
 
 export interface Stats {
-  inQueue: number;
-  currentlyProcessing: number;
-  processedToday: number;
-  percentChangeFromYesterday: number;
+  totalProcessed: number;
+  totalPending: number;
+  totalFailed: number;
+  successRate: number;
+  averageProcessingTime: number;
   totalCost: number;
-  avgTimeSeconds: number;
 }
 
 export interface QueueItem {
@@ -124,10 +125,11 @@ function transformProject(data: any): Project {
     id: data.id || data.Id,
     name: data.name || data.Title || "",
     inputFolderUrl: data.inputFolderUrl || data.input_folder_url || "",
-    inputFolderId: data.inputFolderId || data.input_folder_id || "",
+    inputFolderId: data.inputFolderId || data.input_folder_id || null,
     outputFolderUrl: data.outputFolderUrl || data.output_folder_url || "",
-    outputFolderId: data.outputFolderId || data.output_folder_id || "",
+    outputFolderId: data.outputFolderId || data.output_folder_id || null,
     templateId: data.templateId || data.template_id || null,
+    templateName: data.templateName || data.template_name || undefined,
     customPrompt: data.customPrompt || data.custom_prompt || "",
     status: data.status || "draft",
     resolution: data.resolution || "2K",
@@ -165,12 +167,12 @@ export async function getStats(): Promise<Stats> {
   if (!response.ok) throw new Error("Failed to fetch stats");
   const data = await response.json();
   return {
-    inQueue: data.inQueue || 0,
-    currentlyProcessing: data.currentlyProcessing || 0,
-    processedToday: data.processedToday || 0,
-    percentChangeFromYesterday: data.percentChangeFromYesterday || 0,
-    totalCost: data.totalCost || 0,
-    avgTimeSeconds: data.avgTimeSeconds || 0,
+    totalProcessed: data.totalProcessed ?? data.total_processed ?? data.processedToday ?? 0,
+    totalPending: data.totalPending ?? data.total_pending ?? data.inQueue ?? 0,
+    totalFailed: data.totalFailed ?? data.total_failed ?? 0,
+    successRate: data.successRate ?? data.success_rate ?? 0,
+    averageProcessingTime: data.averageProcessingTime ?? data.average_processing_time ?? data.avgTimeSeconds ?? 0,
+    totalCost: data.totalCost ?? data.total_cost ?? 0,
   };
 }
 
@@ -203,13 +205,21 @@ export async function getProjects(): Promise<Project[]> {
   return projects.map(transformProject);
 }
 
-export async function createProject(
-  project: Omit<Project, "id" | "trialCompleted" | "totalImages" | "processedImages" | "failedImages" | "totalCost">,
-): Promise<Project> {
+export async function createProject(project: Partial<Project>): Promise<Project> {
   const response = await fetch(`${API_BASE}/projects`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(project),
+    body: JSON.stringify({
+      name: project.name,
+      input_folder_url: project.inputFolderUrl ?? "",
+      input_folder_id: project.inputFolderId ?? null,
+      output_folder_url: project.outputFolderUrl ?? "",
+      output_folder_id: project.outputFolderId ?? null,
+      template_id: project.templateId ?? null,
+      custom_prompt: project.customPrompt ?? "",
+      resolution: project.resolution ?? "2K",
+      trial_count: project.trialCount ?? 5,
+    }),
   });
   if (!response.ok) throw new Error("Failed to create project");
   const data = await response.json();

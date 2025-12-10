@@ -1,6 +1,6 @@
-import { Folder, Image, DollarSign, Clock } from "lucide-react";
+import { Clock, DollarSign, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import type { Stats } from "@/types";
+import type { Stats } from "@/services/api";
 
 interface StatsCardsProps {
   stats: Stats | null;
@@ -10,33 +10,32 @@ interface StatsCardsProps {
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   const cards = [
     {
-      title: "In Queue",
-      value: stats?.inQueue ?? 0,
-      icon: Folder,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      title: "Processed Today",
-      value: stats?.processedToday ?? 0,
-      icon: Image,
+      title: "Total Processed",
+      value: stats?.totalProcessed ?? 0,
+      icon: CheckCircle2,
       color: "text-success",
       bgColor: "bg-success/10",
+    },
+    {
+      title: "In Queue",
+      value: stats?.totalPending ?? 0,
+      icon: Clock,
+      color: "text-warning",
+      bgColor: "bg-warning/10",
+    },
+    {
+      title: "Failed",
+      value: stats?.totalFailed ?? 0,
+      icon: AlertCircle,
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
     },
     {
       title: "Total Cost",
       value: `$${(stats?.totalCost ?? 0).toFixed(2)}`,
       icon: DollarSign,
-      color: "text-warning",
-      bgColor: "bg-warning/10",
-    },
-    {
-      title: "Avg Time",
-      value: `${stats?.avgTimeSeconds ?? 0}s`,
-      suffix: "per image",
-      icon: Clock,
-      color: "text-muted-foreground",
-      bgColor: "bg-muted",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
   ];
 
@@ -57,11 +56,6 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
               <p className="mt-2 text-3xl font-bold tracking-tight">
                 {card.value}
               </p>
-              {card.suffix && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {card.suffix}
-                </p>
-              )}
             </div>
             <div className={`rounded-lg p-2.5 ${card.bgColor}`}>
               <card.icon className={`h-5 w-5 ${card.color}`} />
