@@ -3,6 +3,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { LiveActivity } from "@/components/dashboard/LiveActivity";
+import { RecentResults } from "@/components/dashboard/RecentResults";
 import { ProjectsTable } from "@/components/dashboard/ProjectsTable";
 import { NewProjectModal } from "@/components/modals/NewProjectModal";
 import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
@@ -33,7 +34,6 @@ const Dashboard = () => {
   };
 
   const handleDelete = async (projectId: number) => {
-    // TODO: Implement delete API call
     toast.info("Delete functionality coming soon");
   };
 
@@ -52,28 +52,29 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Header usageCount={stats?.totalProcessed} />
 
-      <main className="container px-3 py-4 lg:px-4 lg:py-6 max-w-7xl">
-        {/* Stats Cards */}
+      <main className="container px-3 py-4 lg:px-4 lg:py-5 max-w-7xl">
+        {/* Stats Cards - 5 in a row */}
         <section className="animate-fade-in">
           <StatsCards stats={stats} />
         </section>
 
-        {/* Live Activity */}
-        <section className="mt-4 animate-fade-in-delay-1">
+        {/* Live Activity & Recent Results - side by side on desktop */}
+        <section className="mt-3 grid gap-3 lg:grid-cols-2 animate-fade-in-delay-1">
           <LiveActivity />
+          <RecentResults />
         </section>
 
         {/* Projects Section */}
         <section className="mt-4 animate-fade-in-delay-2">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-base font-semibold">Projects</h2>
-              <p className="text-xs text-muted-foreground">
+              <h2 className="text-sm font-semibold">Projects</h2>
+              <p className="text-[10px] text-muted-foreground">
                 Manage image optimization projects
               </p>
             </div>
-            <Button size="sm" onClick={() => setIsNewProjectOpen(true)}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <Button size="sm" className="h-7 text-xs" onClick={() => setIsNewProjectOpen(true)}>
+              <Plus className="mr-1 h-3 w-3" />
               New Project
             </Button>
           </div>

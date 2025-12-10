@@ -165,22 +165,22 @@ export async function updateSettings(settings: Partial<Settings>): Promise<void>
   if (!response.ok) throw new Error("Failed to update settings");
 }
 
-// Stats - API returns: inQueue, processedToday, totalCost, avgTimeSeconds
+// Stats - API returns: inQueue, currentlyProcessing, processedToday, totalCost, avgTimeSeconds
 export async function getStats(): Promise<Stats> {
   const response = await fetch(getEndpoint('stats'));
   if (!response.ok) throw new Error("Failed to fetch stats");
   const data = await response.json();
   return {
-    totalProcessed: data.totalProcessed ?? data.processedToday ?? 0,
+    totalProcessed: data.processedToday ?? data.totalProcessed ?? 0,
     totalPending: data.inQueue ?? data.totalPending ?? 0,
     totalFailed: data.totalFailed ?? 0,
     successRate: data.successRate ?? 100,
     averageProcessingTime: data.avgTimeSeconds ?? data.averageProcessingTime ?? 0,
     totalCost: data.totalCost ?? 0,
-    // New fields
-    processingNow: data.processingNow ?? data.processing ?? 0,
-    completedToday: data.completedToday ?? data.processedToday ?? 0,
-    costToday: data.costToday ?? data.totalCost ?? 0,
+    // Dashboard specific - use currentlyProcessing from API
+    processingNow: data.currentlyProcessing ?? data.processingNow ?? 0,
+    completedToday: data.processedToday ?? data.completedToday ?? 0,
+    costToday: data.totalCost ?? data.costToday ?? 0,
   };
 }
 

@@ -9,7 +9,7 @@ interface ActivityItem {
   id: number;
   filename: string;
   status: "queued" | "processing" | "optimizing" | "complete" | "failed";
-  progress?: number;
+  progress: number;
   thumbnailUrl?: string;
 }
 
@@ -31,14 +31,13 @@ export function LiveActivity() {
       const response = await fetch(getEndpoint("queue"));
       if (response.ok) {
         const data = await response.json();
-        // Transform queue data to activity items (take first 5)
         const activityItems: ActivityItem[] = (data.queue || data || [])
           .slice(0, 5)
           .map((item: any) => ({
             id: item.id,
             filename: item.fileName || item.filename || `Image ${item.id}`,
             status: item.status || "queued",
-            progress: item.progress,
+            progress: item.progress ?? 0,
             thumbnailUrl: item.thumbnailUrl,
           }));
         setItems(activityItems);
@@ -56,48 +55,63 @@ export function LiveActivity() {
     return () => clearInterval(interval);
   }, []);
 
+  const isProcessingStatus = (status: string) => 
+    status === "processing" || status === "optimizing";
+
   return (
-    <Card className="border-border/40 bg-card/50 p-4">
-      <div className="flex items-center gap-2 mb-4">
+    <Card className="border-border/40 bg-card/50 p-3">
+      <div className="flex items-center gap-2 mb-3">
         <div className="relative">
-          <Activity className="h-4 w-4 text-success" />
-          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-success animate-pulse" />
+          <Activity className="h-3.5 w-3.5 text-success" />
+          <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
         </div>
-        <h3 className="text-sm font-semibold">Live Activity</h3>
+        <h3 className="text-xs font-semibold">Live Activity</h3>
         {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />}
       </div>
 
       {items.length === 0 && !isLoading ? (
-        <div className="text-center py-6 text-muted-foreground">
-          <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-xs">No active processing</p>
+        <div className="text-center py-4 text-muted-foreground">
+          <ImageIcon className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
+          <p className="text-[10px]">No active processing</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {items.map((item) => {
             const config = statusConfig[item.status] || statusConfig.queued;
+            const showProgress = isProcessingStatus(item.status);
+            
             return (
               <div
                 key={item.id}
-                className="flex items-center gap-3 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+                className="flex items-center gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
               >
                 {/* Thumbnail placeholder */}
-                <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
-                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                <div className="h-7 w-7 rounded bg-muted flex items-center justify-center shrink-0">
+                  <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{item.filename}</p>
-                  {(item.status === "processing" || item.status === "optimizing") && (
-                    <Progress value={item.progress ?? 50} className="h-1 mt-1" />
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-medium truncate flex-1">{item.filename}</p>
+                    {showProgress && item.progress > 0 && (
+                      <span className="text-[9px] text-muted-foreground shrink-0">
+                        {item.progress}%
+                      </span>
+                    )}
+                  </div>
+                  {showProgress && (
+                    <Progress 
+                      value={item.progress || 50} 
+                      className="h-1 mt-1" 
+                    />
                   )}
                 </div>
 
                 {/* Status badge */}
                 <Badge
                   variant="outline"
-                  className={`text-[10px] px-1.5 py-0 shrink-0 ${config.className} ${
+                  className={`text-[9px] px-1.5 py-0 shrink-0 ${config.className} ${
                     config.animated ? "animate-pulse-glow" : ""
                   }`}
                 >
