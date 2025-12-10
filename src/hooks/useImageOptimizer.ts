@@ -11,6 +11,7 @@ interface UseImageOptimizerReturn {
   error: string | null;
   refresh: () => Promise<void>;
   triggerOptimizer: () => Promise<void>;
+  redoImage: (fileId: string, fileName: string) => Promise<void>;
 }
 
 export function useImageOptimizer(): UseImageOptimizerReturn {
@@ -95,6 +96,25 @@ export function useImageOptimizer(): UseImageOptimizerReturn {
     }
   }, [fetchQueue, fetchStats, toast]);
 
+  const redoImage = useCallback(async (fileId: string, fileName: string) => {
+    try {
+      await api.redoImage(fileId, fileName);
+      toast({
+        title: "Image Queued",
+        description: "Image queued for reprocessing",
+      });
+      // Refresh queue and history
+      await Promise.all([fetchQueue(), fetchHistory(), fetchStats()]);
+    } catch (err) {
+      console.error('Failed to redo image:', err);
+      toast({
+        title: "Error",
+        description: "Failed to queue image for reprocessing",
+        variant: "destructive",
+      });
+    }
+  }, [fetchQueue, fetchHistory, fetchStats, toast]);
+
   // Initial fetch
   useEffect(() => {
     const initialFetch = async () => {
@@ -132,5 +152,6 @@ export function useImageOptimizer(): UseImageOptimizerReturn {
     error,
     refresh,
     triggerOptimizer,
+    redoImage,
   };
 }

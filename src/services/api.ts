@@ -20,6 +20,7 @@ export interface QueueItem {
 
 export interface HistoryItem {
   id: string;
+  fileId: string;
   fileName: string;
   status: 'success' | 'failed';
   resolution?: string;
@@ -27,6 +28,7 @@ export interface HistoryItem {
   timeSeconds?: number;
   completedAt: string;
   optimizedUrl?: string;
+  optimizedDriveId?: string;
 }
 
 export interface QueueResponse {
@@ -41,6 +43,14 @@ export interface HistoryResponse {
     limit: number;
     total: number;
   };
+}
+
+export interface Settings {
+  inputFolderId: string;
+  outputFolderId: string;
+  cost2K: number;
+  cost4K: number;
+  defaultResolution: '2K' | '4K';
 }
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -69,4 +79,18 @@ export const api = {
   triggerOptimizer: () => fetchApi<{ success: boolean; message?: string }>('/image-optimizer/trigger', {
     method: 'POST',
   }),
+  
+  redoImage: (fileId: string, fileName: string) => 
+    fetchApi<{ success: boolean; message?: string }>('/image-optimizer/redo', {
+      method: 'POST',
+      body: JSON.stringify({ fileId, fileName }),
+    }),
+  
+  getSettings: () => fetchApi<Settings>('/image-optimizer/settings'),
+  
+  updateSettings: (settings: Settings) => 
+    fetchApi<{ success: boolean; message?: string }>('/image-optimizer/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
 };

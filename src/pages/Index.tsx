@@ -21,6 +21,7 @@ const Index = () => {
     isTriggering,
     refresh,
     triggerOptimizer,
+    redoImage,
   } = useImageOptimizer();
 
   // Map API queue items to component format
@@ -35,6 +36,7 @@ const Index = () => {
   // Map API history items to component format
   const historyItems = history.map((item) => ({
     id: item.id,
+    fileId: item.fileId,
     fileName: item.fileName,
     status: item.status,
     completedAt: item.completedAt,
@@ -42,6 +44,7 @@ const Index = () => {
     resolution: item.resolution,
     processingTimeSec: item.timeSeconds,
     optimizedUrl: item.optimizedUrl,
+    optimizedDriveId: item.optimizedDriveId,
   }));
 
   if (isLoading && !stats) {
@@ -141,7 +144,7 @@ const Index = () => {
             </p>
           </div>
 
-          <HistoryTable items={historyItems} />
+          <HistoryTable items={historyItems} onRedo={redoImage} />
         </section>
       </main>
     </div>
