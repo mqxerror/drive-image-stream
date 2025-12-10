@@ -36,19 +36,17 @@ export function ImagePreviewModal({
 }: ImagePreviewModalProps) {
   if (!image) return null;
 
-  const originalUrl = image.fileId 
-    ? getThumbnailUrl(image.fileId)
-    : null;
+  const originalUrl = image.fullUrl || image.thumbnailUrl;
     
   const optimizedUrl = image.optimizedDriveId
     ? getThumbnailUrl(image.optimizedDriveId)
-    : null;
+    : image.optimizedThumbnail || null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>{image.fileName}</DialogTitle>
+          <DialogTitle>{image.name}</DialogTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -102,7 +100,7 @@ export function ImagePreviewModal({
             )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Processing Time:</span>
-              <span className="font-medium">{image.processingTime ? `${image.processingTime} seconds` : '-'}</span>
+              <span className="font-medium">{image.timeSeconds ? `${image.timeSeconds} seconds` : '-'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Cost:</span>
@@ -111,11 +109,11 @@ export function ImagePreviewModal({
           </div>
 
           {/* Prompt */}
-          {(prompt || image.customPrompt) && (
+          {(prompt || image.prompt) && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Prompt:</p>
               <div className="rounded-lg bg-muted/50 p-3 text-sm">
-                {prompt || image.customPrompt}
+                {prompt || image.prompt}
               </div>
             </div>
           )}

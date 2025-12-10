@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CheckCircle2, Loader2, Clock, ImageIcon } from "lucide-react";
+import { CheckCircle2, Clock, ImageIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getThumbnailUrl } from "@/services/api";
 import type { ProjectImage } from "@/types";
@@ -8,8 +8,8 @@ interface ProjectThumbnailsProps {
   images: ProjectImage[];
   remainingCount: number;
   projectId: number;
-  selectedIds?: number[];
-  onSelect?: (id: number, checked: boolean) => void;
+  selectedIds?: string[];
+  onSelect?: (id: string, checked: boolean) => void;
 }
 
 export function ProjectThumbnails({
@@ -19,12 +19,11 @@ export function ProjectThumbnails({
   selectedIds = [],
   onSelect,
 }: ProjectThumbnailsProps) {
-  const statusIcons: Record<ProjectImage['status'], React.ReactNode> = {
-    completed: <CheckCircle2 className="h-3 w-3 text-success" />,
-    processing: <Loader2 className="h-3 w-3 text-processing animate-spin" />,
-    queued: <Clock className="h-3 w-3 text-warning" />,
-    pending: <Clock className="h-3 w-3 text-muted-foreground" />,
-    failed: <span className="text-destructive text-xs">!</span>,
+  const getStatusIcon = (image: ProjectImage) => {
+    if (image.isOptimized || image.status === 'completed') {
+      return <CheckCircle2 className="h-3 w-3 text-success" />;
+    }
+    return <Clock className="h-3 w-3 text-muted-foreground" />;
   };
 
   if (images.length === 0) {
@@ -54,13 +53,13 @@ export function ProjectThumbnails({
           )}
           
           <div className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1">
-            {statusIcons[image.status]}
+            {getStatusIcon(image)}
           </div>
 
           {image.optimizedDriveId ? (
             <img
               src={getThumbnailUrl(image.optimizedDriveId)}
-              alt={image.fileName}
+              alt={image.name}
               className="h-14 w-14 object-cover"
               loading="lazy"
             />

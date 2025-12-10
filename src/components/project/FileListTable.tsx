@@ -13,6 +13,7 @@ import {
   Expand,
   Copy,
   Save,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -83,8 +84,9 @@ export function FileListTable({
   inputFolderId,
 }: FileListTableProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -164,16 +166,22 @@ export function FileListTable({
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 15000);
-    return () => clearInterval(interval);
+    // No auto-polling - only refresh on user action
   }, [fetchData]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData();
+    setIsRefreshing(false);
+  };
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+      if (prev.includes(id)) {
+        return prev.filter(existingId => existingId !== id);
+      } else {
+        return [...prev, id];
+      }
     });
   };
 
@@ -182,15 +190,20 @@ export function FileListTable({
     const pendingIds = files
       .filter((f) => f.status !== "optimized")
       .map((f) => f.id);
-    setSelectedIds(new Set(pendingIds));
+    setSelectedIds(pendingIds);
   };
 
-  const deselectAll = () => setSelectedIds(new Set());
+  const deselectAll = () => setSelectedIds([]);
+
+  // Check if all pending files are selected
+  const allPendingSelected = () => {
+    const pendingIds = files.filter((f) => f.status !== "optimized").map((f) => f.id);
+    return pendingIds.length > 0 && pendingIds.every(id => selectedIds.includes(id));
+  };
 
   const handleStartTrial = () => {
-    const selectedArray = Array.from(selectedIds);
     // Only queue non-optimized images
-    const validIds = selectedArray.filter(id => {
+    const validIds = selectedIds.filter(id => {
       const file = files.find(f => f.id === id);
       return file && file.status !== "optimized";
     });
@@ -204,13 +217,12 @@ export function FileListTable({
     toast.success(`${validIds.length} images added to queue`, {
       description: "Go to Dashboard to start processing",
     });
-    setSelectedIds(new Set());
+    setSelectedIds([]);
   };
 
   const handleQueueAndProcess = async () => {
-    const selectedArray = Array.from(selectedIds);
     // Only queue non-optimized images
-    const validIds = selectedArray.filter(id => {
+    const validIds = selectedIds.filter(id => {
       const file = files.find(f => f.id === id);
       return file && file.status !== "optimized";
     });
@@ -232,7 +244,7 @@ export function FileListTable({
       const result = await triggerProcessing();
       if (result.success) {
         toast.success(`Processing started! ${validIds.length} images queued`);
-        setSelectedIds(new Set());
+        setSelectedIds([]);
         fetchData();
       } else {
         toast.error("Failed to start processing");
@@ -271,7 +283,7 @@ export function FileListTable({
   };
 
   // Count only non-optimized selected items
-  const selectedNonOptimizedCount = Array.from(selectedIds).filter(id => {
+  const selectedNonOptimizedCount = selectedIds.filter(id => {
     const file = files.find(f => f.id === id);
     return file && file.status !== "optimized";
   }).length;
@@ -354,27 +366,49 @@ export function FileListTable({
   return (
     <TooltipProvider>
       <div className="space-y-3">
-        {/* Summary Stats */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>Total: <span className="text-foreground font-medium">{stats.total}</span></span>
-          <span>Optimized: <span className="text-emerald-400 font-medium">{stats.optimized}</span></span>
-          <span>In Progress: <span className="text-amber-400 font-medium">{stats.inProgress}</span></span>
-          <span>Pending: <span className="text-foreground font-medium">{stats.pending}</span></span>
-          {stats.failed > 0 && (
-            <span>Failed: <span className="text-red-400 font-medium">{stats.failed}</span></span>
-          )}
+        {/* Summary Stats with Refresh Button */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span>Total: <span className="text-foreground font-medium">{stats.total}</span></span>
+            <span>Optimized: <span className="text-emerald-400 font-medium">{stats.optimized}</span></span>
+            <span>In Progress: <span className="text-amber-400 font-medium">{stats.inProgress}</span></span>
+            <span>Pending: <span className="text-foreground font-medium">{stats.pending}</span></span>
+            {stats.failed > 0 && (
+              <span>Failed: <span className="text-red-400 font-medium">{stats.failed}</span></span>
+            )}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-7 text-xs" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`mr-1 h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Action Bar */}
         <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-card/50 border border-border/50">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={selectAllPending}>
-              <CheckSquare className="mr-1 h-3 w-3" />
-              Select Pending
-            </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={deselectAll}>
-              <Square className="mr-1 h-3 w-3" />
-              Deselect
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs px-2" 
+              onClick={allPendingSelected() ? deselectAll : selectAllPending}
+            >
+              {allPendingSelected() ? (
+                <>
+                  <Square className="mr-1 h-3 w-3" />
+                  Deselect All
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="mr-1 h-3 w-3" />
+                  Select All
+                </>
+              )}
             </Button>
             <span className="text-xs text-muted-foreground ml-1">
               {selectedNonOptimizedCount} of {stats.pending + stats.inProgress + stats.failed} selected
@@ -454,7 +488,7 @@ export function FileListTable({
                   <TableCell className="pl-2 pr-1 py-1.5">
                     {canSelect(file) && (
                       <Checkbox
-                        checked={selectedIds.has(file.id)}
+                        checked={selectedIds.includes(file.id)}
                         onCheckedChange={() => toggleSelect(file.id)}
                         className="h-3.5 w-3.5"
                       />

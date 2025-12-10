@@ -58,14 +58,7 @@ export function useProjects() {
       setIsLoading(false);
     };
     init();
-
-    const projectsInterval = setInterval(fetchProjects, 5000);
-    const statsInterval = setInterval(fetchStats, 10000);
-
-    return () => {
-      clearInterval(projectsInterval);
-      clearInterval(statsInterval);
-    };
+    // No auto-polling - only refresh on user action or page load
   }, [fetchProjects, fetchStats, fetchTemplates]);
 
   const createProject = async (data: Partial<Project>) => {

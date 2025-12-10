@@ -267,22 +267,74 @@ export async function updateProject(id: number, project: Partial<Project>): Prom
   };
 }
 
-// Project Images - fetches images from Google Drive folder
+// Project Images - fetches images from Google Drive folder with enriched data
 export interface ProjectImage {
   id: string;
   name: string;
+  mimeType?: string;
   thumbnailUrl: string;
   fullUrl: string;
+  // Enriched fields from API
+  status: 'completed' | 'pending';
+  isOptimized: boolean;
+  cost: number | null;
+  timeSeconds: number | null;
+  prompt: string | null;
+  resolution: string | null;
+  optimizedUrl: string | null;
+  optimizedThumbnail: string | null;
+  optimizedDriveId: string | null;
+  completedAt: string | null;
 }
 
-export async function getProjectImages(projectId: number): Promise<{ success: boolean; totalImages: number; images: ProjectImage[] }> {
+export interface ProjectImagesResponse {
+  success: boolean;
+  projectId: number;
+  projectName: string;
+  inputFolderId: string;
+  outputFolderId: string;
+  totalImages: number;
+  optimizedCount: number;
+  pendingCount: number;
+  totalCost: number;
+  images: ProjectImage[];
+}
+
+export async function getProjectImages(projectId: number): Promise<ProjectImagesResponse> {
   const response = await fetch(`${getEndpoint('projectImages')}?projectId=${projectId}`);
   if (!response.ok) throw new Error("Failed to fetch project images");
   const data = await response.json();
+  
+  // Transform images to ensure consistent field names
+  const images: ProjectImage[] = (data.images || []).map((img: any) => ({
+    id: img.id,
+    name: img.name,
+    mimeType: img.mimeType,
+    thumbnailUrl: img.thumbnailUrl,
+    fullUrl: img.fullUrl,
+    status: img.status || (img.isOptimized ? 'completed' : 'pending'),
+    isOptimized: img.isOptimized !== undefined ? img.isOptimized : (img.status === 'completed'),
+    cost: img.cost ?? null,
+    timeSeconds: img.timeSeconds ?? null,
+    prompt: img.prompt ?? null,
+    resolution: img.resolution ?? null,
+    optimizedUrl: img.optimizedUrl ?? null,
+    optimizedThumbnail: img.optimizedThumbnail ?? null,
+    optimizedDriveId: img.optimizedDriveId ?? null,
+    completedAt: img.completedAt ?? null,
+  }));
+  
   return {
     success: data.success ?? true,
-    totalImages: data.totalImages ?? data.images?.length ?? 0,
-    images: data.images || [],
+    projectId: data.projectId ?? projectId,
+    projectName: data.projectName ?? '',
+    inputFolderId: data.inputFolderId ?? '',
+    outputFolderId: data.outputFolderId ?? '',
+    totalImages: data.totalImages ?? images.length,
+    optimizedCount: data.optimizedCount ?? images.filter(i => i.isOptimized).length,
+    pendingCount: data.pendingCount ?? images.filter(i => !i.isOptimized).length,
+    totalCost: data.totalCost ?? images.reduce((sum, i) => sum + (i.cost || 0), 0),
+    images,
   };
 }
 
