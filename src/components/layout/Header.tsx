@@ -11,7 +11,6 @@ export function Header({ usageCount = 0 }: HeaderProps) {
   const navItems = [
     { path: "/", label: "Dashboard" },
     { path: "/templates", label: "Templates" },
-    { path: "/settings", label: "Settings" },
   ];
 
   return (

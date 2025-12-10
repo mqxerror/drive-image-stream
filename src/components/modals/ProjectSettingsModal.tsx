@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { parseFolderId } from "@/services/api";
 import type { Project, Template } from "@/services/api";
 
 interface ProjectSettingsModalProps {
@@ -37,12 +38,47 @@ export function ProjectSettingsModal({
 }: ProjectSettingsModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
+    name: project.name,
     templateId: project.templateId,
     resolution: project.resolution,
     customPrompt: project.customPrompt,
     inputFolderUrl: project.inputFolderUrl,
+    inputFolderId: project.inputFolderId,
     outputFolderUrl: project.outputFolderUrl,
+    outputFolderId: project.outputFolderId,
   });
+
+  // Reset form when project changes
+  useEffect(() => {
+    setFormData({
+      name: project.name,
+      templateId: project.templateId,
+      resolution: project.resolution,
+      customPrompt: project.customPrompt,
+      inputFolderUrl: project.inputFolderUrl,
+      inputFolderId: project.inputFolderId,
+      outputFolderUrl: project.outputFolderUrl,
+      outputFolderId: project.outputFolderId,
+    });
+  }, [project]);
+
+  const handleInputUrlChange = (url: string) => {
+    const folderId = parseFolderId(url);
+    setFormData({
+      ...formData,
+      inputFolderUrl: url,
+      inputFolderId: folderId,
+    });
+  };
+
+  const handleOutputUrlChange = (url: string) => {
+    const folderId = parseFolderId(url);
+    setFormData({
+      ...formData,
+      outputFolderUrl: url,
+      outputFolderId: folderId,
+    });
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -62,6 +98,19 @@ export function ProjectSettingsModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Project Name */}
+          <div className="space-y-2">
+            <Label htmlFor="projectName">Project Name</Label>
+            <Input
+              id="projectName"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="Project name"
+            />
+          </div>
+
           {/* Template Selection */}
           <div className="space-y-2">
             <Label>Template</Label>
@@ -112,6 +161,36 @@ export function ProjectSettingsModal({
             </RadioGroup>
           </div>
 
+          {/* Input Folder URL */}
+          <div className="space-y-2">
+            <Label htmlFor="inputFolderUrl">Input Folder</Label>
+            <Input
+              id="inputFolderUrl"
+              value={formData.inputFolderUrl}
+              onChange={(e) => handleInputUrlChange(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/..."
+            />
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Paste a Google Drive folder URL
+            </p>
+          </div>
+
+          {/* Output Folder URL */}
+          <div className="space-y-2">
+            <Label htmlFor="outputFolderUrl">Output Folder</Label>
+            <Input
+              id="outputFolderUrl"
+              value={formData.outputFolderUrl}
+              onChange={(e) => handleOutputUrlChange(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/..."
+            />
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Where optimized images will be saved
+            </p>
+          </div>
+
           {/* Custom Prompt Override */}
           <div className="space-y-2">
             <Label htmlFor="customPrompt">Custom Prompt Override</Label>
@@ -121,38 +200,12 @@ export function ProjectSettingsModal({
               onChange={(e) =>
                 setFormData({ ...formData, customPrompt: e.target.value })
               }
-              placeholder="Override the template prompt..."
+              placeholder="Override the template prompt for this project..."
               rows={4}
             />
             <p className="text-xs text-muted-foreground">
               Leave empty to use the template prompt
             </p>
-          </div>
-
-          {/* Input Folder URL */}
-          <div className="space-y-2">
-            <Label htmlFor="inputFolderUrl">Input Folder URL</Label>
-            <Input
-              id="inputFolderUrl"
-              value={formData.inputFolderUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, inputFolderUrl: e.target.value })
-              }
-              placeholder="https://drive.google.com/drive/folders/..."
-            />
-          </div>
-
-          {/* Output Folder URL */}
-          <div className="space-y-2">
-            <Label htmlFor="outputFolderUrl">Output Folder URL</Label>
-            <Input
-              id="outputFolderUrl"
-              value={formData.outputFolderUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, outputFolderUrl: e.target.value })
-              }
-              placeholder="https://drive.google.com/drive/folders/..."
-            />
           </div>
         </div>
 

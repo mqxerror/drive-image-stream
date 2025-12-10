@@ -96,20 +96,19 @@ export function ProjectCard({
               Resume
             </Button>
           ) : (project.status === 'draft' || isTrialComplete) && (
-            <Link to={`/projects/${project.id}`}>
-              <Button
-                variant="default"
-                size="sm"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Play className="mr-1.5 h-3.5 w-3.5" />
-                )}
-                Start Batch
-              </Button>
-            </Link>
+            <Button
+              className="bg-teal-600 hover:bg-teal-700"
+              size="sm"
+              onClick={onStartBatch}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Start Batch
+            </Button>
           )}
           
           <Link to={`/projects/${project.id}`}>
@@ -119,11 +118,9 @@ export function ProjectCard({
             </Button>
           </Link>
           
-          <Link to={`/projects/${project.id}?tab=settings`}>
-            <Button variant="ghost" size="sm">
-              <Settings className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="sm">
+            <Settings className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
     </Card>
