@@ -84,7 +84,7 @@ export function FileListTable({
   inputFolderId,
 }: FileListTableProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -93,7 +93,6 @@ export function FileListTable({
   const [isProcessing, setIsProcessing] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [selectedPromptForSave, setSelectedPromptForSave] = useState("");
-
   const fetchData = useCallback(async () => {
     if (!projectId) return;
 
@@ -175,35 +174,39 @@ export function FileListTable({
     setIsRefreshing(false);
   };
 
-  const toggleSelect = (id: string) => {
+  const handleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter(existingId => existingId !== id);
+      const newSelected = new Set(prev);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
       } else {
-        return [...prev, id];
+        newSelected.add(id);
       }
+      return newSelected;
     });
   };
 
-  // Select all non-optimized files (pending, queued, processing, failed)
-  const selectAllPending = () => {
-    const pendingIds = files
-      .filter((f) => f.status !== "optimized")
-      .map((f) => f.id);
-    setSelectedIds(pendingIds);
+  const handleSelectAll = () => {
+    const pendingFiles = files.filter((f) => f.status !== "optimized");
+    if (pendingFiles.length > 0 && pendingFiles.every(f => selectedIds.has(f.id))) {
+      // All pending are selected, so deselect all
+      setSelectedIds(new Set());
+    } else {
+      // Select all pending files
+      setSelectedIds(new Set(pendingFiles.map((f) => f.id)));
+    }
   };
 
-  const deselectAll = () => setSelectedIds([]);
-
-  // Check if all pending files are selected
-  const allPendingSelected = () => {
-    const pendingIds = files.filter((f) => f.status !== "optimized").map((f) => f.id);
-    return pendingIds.length > 0 && pendingIds.every(id => selectedIds.includes(id));
+  const isSelected = (id: string) => selectedIds.has(id);
+  
+  const isAllPendingSelected = () => {
+    const pendingFiles = files.filter((f) => f.status !== "optimized");
+    return pendingFiles.length > 0 && pendingFiles.every(f => selectedIds.has(f.id));
   };
 
   const handleStartTrial = () => {
     // Only queue non-optimized images
-    const validIds = selectedIds.filter(id => {
+    const validIds = Array.from(selectedIds).filter(id => {
       const file = files.find(f => f.id === id);
       return file && file.status !== "optimized";
     });
@@ -217,12 +220,12 @@ export function FileListTable({
     toast.success(`${validIds.length} images added to queue`, {
       description: "Go to Dashboard to start processing",
     });
-    setSelectedIds([]);
+    setSelectedIds(new Set());
   };
 
   const handleQueueAndProcess = async () => {
     // Only queue non-optimized images
-    const validIds = selectedIds.filter(id => {
+    const validIds = Array.from(selectedIds).filter(id => {
       const file = files.find(f => f.id === id);
       return file && file.status !== "optimized";
     });
@@ -244,7 +247,7 @@ export function FileListTable({
       const result = await triggerProcessing();
       if (result.success) {
         toast.success(`Processing started! ${validIds.length} images queued`);
-        setSelectedIds([]);
+        setSelectedIds(new Set());
         fetchData();
       } else {
         toast.error("Failed to start processing");
@@ -283,7 +286,7 @@ export function FileListTable({
   };
 
   // Count only non-optimized selected items
-  const selectedNonOptimizedCount = selectedIds.filter(id => {
+  const selectedNonOptimizedCount = Array.from(selectedIds).filter(id => {
     const file = files.find(f => f.id === id);
     return file && file.status !== "optimized";
   }).length;
@@ -396,9 +399,9 @@ export function FileListTable({
               variant="ghost" 
               size="sm" 
               className="h-7 text-xs px-2" 
-              onClick={allPendingSelected() ? deselectAll : selectAllPending}
+              onClick={handleSelectAll}
             >
-              {allPendingSelected() ? (
+              {isAllPendingSelected() ? (
                 <>
                   <Square className="mr-1 h-3 w-3" />
                   Deselect All
@@ -411,7 +414,7 @@ export function FileListTable({
               )}
             </Button>
             <span className="text-xs text-muted-foreground ml-1">
-              {selectedNonOptimizedCount} of {stats.pending + stats.inProgress + stats.failed} selected
+              {selectedIds.size} of {stats.pending + stats.inProgress + stats.failed} selected
             </span>
           </div>
 
@@ -488,8 +491,8 @@ export function FileListTable({
                   <TableCell className="pl-2 pr-1 py-1.5">
                     {canSelect(file) && (
                       <Checkbox
-                        checked={selectedIds.includes(file.id)}
-                        onCheckedChange={() => toggleSelect(file.id)}
+                        checked={isSelected(file.id)}
+                        onCheckedChange={() => handleSelectOne(file.id)}
                         className="h-3.5 w-3.5"
                       />
                     )}
