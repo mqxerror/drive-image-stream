@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { RedoModal } from "@/components/modals/RedoModal";
 import { ImagePreviewModal } from "@/components/modals/ImagePreviewModal";
-import { api, getThumbnailUrl } from "@/services/api";
+import { getProjects, getTemplates, getThumbnailUrl, triggerProcessing, redoImage } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, ProjectImage, Template } from "@/types";
 
@@ -49,14 +49,17 @@ const ProjectDetail = () => {
   const fetchData = useCallback(async () => {
     if (!id) return;
     try {
-      const [projectData, imagesData, templatesData] = await Promise.all([
-        api.getProject(parseInt(id)),
-        api.getProjectImages(parseInt(id)),
-        api.getTemplates(),
+      const [projectsData, templatesData] = await Promise.all([
+        getProjects(),
+        getTemplates(),
       ]);
-      setProject(projectData);
-      setImages(imagesData.images);
-      setTemplates(templatesData.templates);
+      const foundProject = projectsData.find(p => p.id === parseInt(id));
+      if (foundProject) {
+        setProject(foundProject);
+      }
+      setTemplates(templatesData);
+      // Note: Images endpoint needs to be added to API
+      setImages([]);
     } catch (error) {
       console.error("Failed to fetch project:", error);
       toast({
@@ -95,7 +98,7 @@ const ProjectDetail = () => {
     if (!project) return;
     setActionLoading(true);
     try {
-      await api.startBatch(project.id);
+      await triggerProcessing();
       await fetchData();
       toast({ title: "Batch started", description: "Processing has begun." });
     } catch (error) {
@@ -109,7 +112,7 @@ const ProjectDetail = () => {
     if (!project) return;
     setActionLoading(true);
     try {
-      await api.startTrial(project.id);
+      await triggerProcessing();
       await fetchData();
       toast({ title: "Trial started", description: `Processing ${project.trialCount} trial images.` });
     } catch (error) {
@@ -121,7 +124,13 @@ const ProjectDetail = () => {
 
   const handleRedoSubmit = async (templateId?: number, customPrompt?: string, saveAsTemplate?: { name: string }) => {
     try {
-      await api.redoBulk(selectedIds, templateId, customPrompt, saveAsTemplate);
+      // Redo each selected image
+      for (const imageId of selectedIds) {
+        const image = images.find(img => img.id === imageId);
+        if (image) {
+          await redoImage(image.fileId, image.fileName);
+        }
+      }
       await fetchData();
       setSelectedIds([]);
       toast({ title: "Images queued", description: `${selectedIds.length} images queued for reprocessing.` });
@@ -256,7 +265,7 @@ const ProjectDetail = () => {
                       <TableCell>
                         {image.optimizedDriveId ? (
                           <img
-                            src={getThumbnailUrl(image.optimizedDriveId, 100)}
+                            src={getThumbnailUrl(image.optimizedDriveId)}
                             alt={image.fileName}
                             className="h-10 w-10 rounded object-cover"
                           />

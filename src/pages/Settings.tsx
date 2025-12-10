@@ -13,29 +13,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { api } from "@/services/api";
+import { getSettings, updateSettings, getTemplates, getStats } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import type { Settings as SettingsType, Template, UsageStats } from "@/types";
+import type { Settings as SettingsType, Template, Stats } from "@/types";
 
 const Settings = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [usage, setUsage] = useState<UsageStats | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [settingsData, templatesData, usageData] = await Promise.all([
-          api.getSettings(),
-          api.getTemplates(),
-          api.getUsageStats(),
+        const [settingsData, templatesData, statsData] = await Promise.all([
+          getSettings(),
+          getTemplates(),
+          getStats(),
         ]);
         setSettings(settingsData);
-        setTemplates(templatesData.templates);
-        setUsage(usageData);
+        setTemplates(templatesData);
+        setStats(statsData);
       } catch (error) {
         console.error("Failed to fetch settings:", error);
         toast({
@@ -55,7 +55,7 @@ const Settings = () => {
     
     setIsSaving(true);
     try {
-      await api.updateSettings(settings);
+      await updateSettings(settings);
       toast({
         title: "Settings saved",
         description: "Your settings have been updated.",
@@ -96,80 +96,81 @@ const Settings = () => {
               <div className="space-y-3">
                 <Label>Default Resolution</Label>
                 <RadioGroup
-                  value={settings?.defaultResolution || '4K'}
-                  onValueChange={(value) => setSettings(prev => prev ? { ...prev, defaultResolution: value as '2K' | '4K' } : null)}
+                  value={settings?.resolution || '2K'}
+                  onValueChange={(value) => setSettings(prev => prev ? { ...prev, resolution: value } : null)}
                   className="flex gap-6"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="2K" id="res-2k" />
                     <Label htmlFor="res-2k" className="font-normal cursor-pointer">
-                      2K (${settings?.cost2K?.toFixed(2) || '0.12'}/image)
+                      2K (${settings?.costPerImage2k?.toFixed(2) || '0.12'}/image)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="4K" id="res-4k" />
                     <Label htmlFor="res-4k" className="font-normal cursor-pointer">
-                      4K (${settings?.cost4K?.toFixed(2) || '0.24'}/image)
+                      4K (${settings?.costPerImage4k?.toFixed(2) || '0.24'}/image)
                     </Label>
                   </div>
                 </RadioGroup>
               </div>
 
-              {/* Default Trial Count */}
+              {/* Batch Size */}
               <div className="space-y-2">
-                <Label htmlFor="trialCount">Default Trial Count</Label>
+                <Label htmlFor="batchSize">Batch Size</Label>
                 <div className="flex items-center gap-3">
                   <Input
-                    id="trialCount"
+                    id="batchSize"
                     type="number"
                     min={1}
-                    max={20}
-                    value={settings?.defaultTrialCount || 5}
-                    onChange={(e) => setSettings(prev => prev ? { ...prev, defaultTrialCount: parseInt(e.target.value) || 5 } : null)}
+                    max={50}
+                    value={settings?.batchSize || 1}
+                    onChange={(e) => setSettings(prev => prev ? { ...prev, batchSize: parseInt(e.target.value) || 1 } : null)}
                     className="w-24"
                   />
-                  <span className="text-sm text-muted-foreground">images</span>
+                  <span className="text-sm text-muted-foreground">images per batch</span>
                 </div>
               </div>
 
-              {/* Default Template */}
+              {/* Schedule */}
               <div className="space-y-2">
-                <Label>Default Template</Label>
-                <Select
-                  value={settings?.defaultTemplateId?.toString() || ''}
-                  onValueChange={(value) => setSettings(prev => prev ? { ...prev, defaultTemplateId: value ? parseInt(value) : null } : null)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.filter(t => t.isActive).map((template) => (
-                      <SelectItem key={template.id} value={template.id.toString()}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="scheduleMinutes">Schedule Interval</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="scheduleMinutes"
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={settings?.scheduleMinutes || 2}
+                    onChange={(e) => setSettings(prev => prev ? { ...prev, scheduleMinutes: parseInt(e.target.value) || 2 } : null)}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">minutes between batches</span>
+                </div>
               </div>
             </div>
           </Card>
 
-          {/* Usage Stats */}
+          {/* Stats */}
           <Card className="p-6 border-border/50">
-            <h2 className="text-lg font-semibold mb-6">Usage This Month</h2>
+            <h2 className="text-lg font-semibold mb-6">Current Stats</h2>
 
             <div className="space-y-4">
               <div className="flex justify-between py-2 border-b border-border/30">
-                <span className="text-muted-foreground">Images Processed</span>
-                <span className="font-semibold">{usage?.imagesProcessed ?? 0}</span>
+                <span className="text-muted-foreground">In Queue</span>
+                <span className="font-semibold">{stats?.inQueue ?? 0}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/30">
+                <span className="text-muted-foreground">Processed Today</span>
+                <span className="font-semibold">{stats?.processedToday ?? 0}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/30">
                 <span className="text-muted-foreground">Total Cost</span>
-                <span className="font-semibold">${(usage?.totalCost ?? 0).toFixed(2)}</span>
+                <span className="font-semibold">${(stats?.totalCost ?? 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-muted-foreground">Average Time</span>
-                <span className="font-semibold">{usage?.avgTime ?? 0}s per image</span>
+                <span className="font-semibold">{stats?.avgTimeSeconds ?? 0}s per image</span>
               </div>
             </div>
           </Card>

@@ -6,17 +6,15 @@ export interface Project {
   outputFolderUrl: string;
   outputFolderId: string;
   templateId: number | null;
-  customPrompt: string | null;
-  status: 'draft' | 'trial' | 'processing' | 'paused' | 'completed' | 'failed';
-  resolution: '2K' | '4K';
+  customPrompt: string;
+  status: string;
+  resolution: string;
   trialCount: number;
   trialCompleted: number;
   totalImages: number;
   processedImages: number;
   failedImages: number;
   totalCost: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ProjectImage {
@@ -53,9 +51,11 @@ export interface Template {
 }
 
 export interface Stats {
-  projectCount: number;
-  processedThisMonth: number;
-  totalCostThisMonth: number;
+  inQueue: number;
+  currentlyProcessing: number;
+  processedToday: number;
+  percentChangeFromYesterday: number;
+  totalCost: number;
   avgTimeSeconds: number;
 }
 
@@ -66,9 +66,12 @@ export interface UsageStats {
 }
 
 export interface Settings {
-  defaultResolution: '2K' | '4K';
-  defaultTrialCount: number;
-  defaultTemplateId: number | null;
-  cost2K: number;
-  cost4K: number;
+  inputFolderId: string;
+  outputFolderId: string;
+  batchSize: number;
+  scheduleMinutes: number;
+  resolution: string;
+  costPerImage2k: number;
+  costPerImage4k: number;
+  customPrompt: string;
 }

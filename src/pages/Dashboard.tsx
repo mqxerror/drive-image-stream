@@ -68,7 +68,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header usageCount={stats?.processedThisMonth} />
+      <Header usageCount={stats?.processedToday} />
 
       <main className="container px-4 py-8">
         {/* Stats Cards */}
@@ -132,8 +132,8 @@ const Dashboard = () => {
         onOpenChange={setIsNewProjectOpen}
         templates={templates}
         onSubmit={handleCreateProject}
-        cost2K={settings?.cost2K}
-        cost4K={settings?.cost4K}
+        cost2K={settings?.costPerImage2k}
+        cost4K={settings?.costPerImage4k}
       />
     </div>
   );

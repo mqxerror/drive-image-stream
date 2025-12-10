@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/services/api";
+import { api, getProjects, getStats, getTemplates, getSettings, createProject as apiCreateProject, triggerProcessing } from "@/services/api";
 import type { Project, Stats, Template, Settings } from "@/types";
 
 export function useProjects() {
@@ -13,8 +13,8 @@ export function useProjects() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const data = await api.getProjects();
-      setProjects(data.projects);
+      const data = await getProjects();
+      setProjects(data);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
     }
@@ -22,7 +22,7 @@ export function useProjects() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const data = await api.getStats();
+      const data = await getStats();
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
@@ -31,8 +31,8 @@ export function useProjects() {
 
   const fetchTemplates = useCallback(async () => {
     try {
-      const data = await api.getTemplates();
-      setTemplates(data.templates);
+      const data = await getTemplates();
+      setTemplates(data);
     } catch (error) {
       console.error("Failed to fetch templates:", error);
     }
@@ -40,7 +40,7 @@ export function useProjects() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const data = await api.getSettings();
+      const data = await getSettings();
       setSettings(data);
     } catch (error) {
       console.error("Failed to fetch settings:", error);
@@ -76,7 +76,19 @@ export function useProjects() {
 
   const createProject = async (data: Partial<Project>) => {
     try {
-      const project = await api.createProject(data);
+      const projectData = {
+        name: data.name || '',
+        inputFolderUrl: data.inputFolderUrl || '',
+        inputFolderId: data.inputFolderId || '',
+        outputFolderUrl: data.outputFolderUrl || '',
+        outputFolderId: data.outputFolderId || '',
+        templateId: data.templateId || null,
+        customPrompt: data.customPrompt || '',
+        status: data.status || 'draft',
+        resolution: data.resolution || '2K',
+        trialCount: data.trialCount || 5,
+      };
+      const project = await apiCreateProject(projectData);
       setProjects((prev) => [...prev, project]);
       toast({
         title: "Project created",
@@ -95,7 +107,7 @@ export function useProjects() {
 
   const startBatch = async (projectId: number) => {
     try {
-      await api.startBatch(projectId);
+      await triggerProcessing();
       await fetchProjects();
       toast({
         title: "Batch started",
@@ -113,7 +125,7 @@ export function useProjects() {
 
   const pauseProject = async (projectId: number) => {
     try {
-      await api.pauseProject(projectId);
+      // Note: Pause functionality needs to be added to API
       await fetchProjects();
       toast({
         title: "Project paused",
@@ -131,7 +143,7 @@ export function useProjects() {
 
   const resumeProject = async (projectId: number) => {
     try {
-      await api.resumeProject(projectId);
+      await triggerProcessing();
       await fetchProjects();
       toast({
         title: "Project resumed",

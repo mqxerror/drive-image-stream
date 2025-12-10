@@ -59,7 +59,7 @@ export function ProjectThumbnails({
 
           {image.optimizedDriveId ? (
             <img
-              src={getThumbnailUrl(image.optimizedDriveId, 100)}
+              src={getThumbnailUrl(image.optimizedDriveId)}
               alt={image.fileName}
               className="h-14 w-14 object-cover"
               loading="lazy"
