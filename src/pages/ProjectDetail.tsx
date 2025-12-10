@@ -5,6 +5,7 @@ import {
   Settings,
   Loader2,
   ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -181,6 +182,17 @@ const ProjectDetail = () => {
             <Badge variant="outline" className="border-border/50">
               {project.processedImages}/{project.totalImages} processed
             </Badge>
+          )}
+          {project.inputFolderUrl && (
+            <a
+              href={project.inputFolderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Open Input Folder in Google Drive
+            </a>
           )}
         </div>
 

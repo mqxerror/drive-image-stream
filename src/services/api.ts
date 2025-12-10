@@ -244,11 +244,16 @@ export async function updateProject(id: number, project: Partial<Project>): Prom
       trial_count: project.trialCount,
     }),
   });
-  if (!response.ok) throw new Error("Failed to update project");
+  
   const data = await response.json();
+  
+  // Handle various success response formats from the API
+  // API may return: { success: true }, empty object, or just the project data
+  const isSuccess = response.ok && (data.success === true || data.success === undefined || Object.keys(data).length === 0);
+  
   return {
-    success: data.success ?? true,
-    message: data.message ?? "Project updated",
+    success: isSuccess,
+    message: data.message ?? (isSuccess ? "Project updated successfully" : "Failed to update project"),
     project: data.project ? transformProject(data.project) : undefined,
   };
 }
