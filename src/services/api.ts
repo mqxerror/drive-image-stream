@@ -321,7 +321,7 @@ export async function getHistory(page = 1, limit = 20): Promise<{ history: Histo
   return { history, pagination: data.pagination };
 }
 
-// Trigger processing
+// Trigger processing (legacy)
 export async function triggerProcessing(): Promise<{ success: boolean; message: string }> {
   const response = await fetch(getEndpoint('trigger'), {
     method: "POST",

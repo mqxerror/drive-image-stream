@@ -24,6 +24,7 @@ const endpointMethods: Record<EndpointName, string> = {
   queue: 'GET',
   history: 'GET',
   trigger: 'POST',
+  process: 'POST',
   redo: 'POST',
   settings: 'GET, PUT',
 };
