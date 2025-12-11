@@ -14,6 +14,7 @@ import {
   Copy,
   Save,
   RefreshCw,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,6 +48,7 @@ import { getEndpoint } from "@/hooks/useApiConfig";
 import { getQueue, getHistory, processBatch, type QueueItem, type HistoryItem } from "@/services/api";
 import { ImageDetailModal } from "@/components/modals/ImageDetailModal";
 import { SaveTemplateDialog } from "@/components/modals/SaveTemplateDialog";
+import { ReprocessModal } from "@/components/modals/ReprocessModal";
 import { toast } from "sonner";
 
 export interface FileItem {
@@ -93,6 +95,8 @@ export function FileListTable({
   const [isProcessing, setIsProcessing] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [selectedPromptForSave, setSelectedPromptForSave] = useState("");
+  const [reprocessFile, setReprocessFile] = useState<FileItem | null>(null);
+  const [reprocessOpen, setReprocessOpen] = useState(false);
   const fetchData = useCallback(async () => {
     if (!projectId) return;
 
@@ -281,6 +285,36 @@ export function FileListTable({
   const openSaveTemplateDialog = (prompt: string) => {
     setSelectedPromptForSave(prompt);
     setSaveTemplateOpen(true);
+  };
+
+  const openReprocessModal = (file: FileItem) => {
+    setReprocessFile(file);
+    setReprocessOpen(true);
+  };
+
+  const handleReprocess = async (fileId: string, fileName: string, customPrompt: string) => {
+    try {
+      const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/add-to-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId,
+          fileName,
+          customPrompt,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Image added to queue for reprocessing!');
+        await fetchData(); // Refresh the list
+      } else {
+        throw new Error('Failed to add to queue');
+      }
+    } catch (error) {
+      console.error('Reprocess error:', error);
+      toast.error('Failed to add image to queue');
+      throw error;
+    }
   };
 
   const filteredFiles = files.filter((f) => {
@@ -569,7 +603,7 @@ export function FileListTable({
                         <PopoverTrigger asChild>
                           <button className="flex items-center gap-1 text-left hover:bg-muted/50 rounded px-1 -mx-1 transition-colors group">
                             <span className="text-[10px] text-muted-foreground truncate block max-w-[120px]">
-                              {file.prompt.length > 50 ? `${file.prompt.slice(0, 50)}...` : file.prompt}
+                              {file.prompt.length > 40 ? `${file.prompt.slice(0, 40)}...` : file.prompt}
                             </span>
                             <Expand className="h-2.5 w-2.5 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                           </button>
@@ -609,20 +643,56 @@ export function FileListTable({
                     )}
                   </TableCell>
                   <TableCell className="py-1.5 pr-2">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-0.5">
                       {file.status === "optimized" && (
                         <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => openPreview(file)}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <RotateCcw className="h-3 w-3" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => openPreview(file)}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="text-xs">View Details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          {file.prompt && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => openSaveTemplateDialog(file.prompt!)}
+                                >
+                                  <Bookmark className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">Save as Template</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => openReprocessModal(file)}
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="text-xs">Reprocess</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </>
                       )}
                     </div>
@@ -639,6 +709,7 @@ export function FileListTable({
           onOpenChange={setPreviewOpen}
           file={previewFile}
           onSaveTemplate={openSaveTemplateDialog}
+          onReprocess={openReprocessModal}
         />
 
         {/* Save Template Dialog */}
@@ -646,6 +717,14 @@ export function FileListTable({
           open={saveTemplateOpen}
           onOpenChange={setSaveTemplateOpen}
           prompt={selectedPromptForSave}
+        />
+
+        {/* Reprocess Modal */}
+        <ReprocessModal
+          open={reprocessOpen}
+          onOpenChange={setReprocessOpen}
+          file={reprocessFile}
+          onReprocess={handleReprocess}
         />
       </div>
     </TooltipProvider>
