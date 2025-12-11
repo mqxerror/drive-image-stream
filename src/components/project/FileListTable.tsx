@@ -253,25 +253,49 @@ export function FileListTable({
       return;
     }
 
+    // Build files array with fileId and fileName
+    const selectedFiles = validIds.map(id => {
+      const file = files.find(f => f.id === id);
+      return {
+        fileId: id,
+        fileName: file?.name || `image-${id}`,
+      };
+    });
+
     setIsProcessing(true);
     try {
-      // Call the batch process endpoint directly
-      const result = await processBatch(projectId, validIds);
-      if (result.success) {
-        toast.success(`Processing started!`, {
-          description: `${validIds.length} images queued for processing`,
-        });
-        setSelectedIds(new Set());
-        // Refresh after a short delay to allow backend to update
-        setTimeout(() => fetchData(), 1000);
-      } else {
-        toast.error("Failed to start processing", {
-          description: result.message,
-        });
+      // First add selected images to queue
+      const addResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/add-to-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: selectedFiles }),
+      });
+
+      if (!addResponse.ok) {
+        const errorText = await addResponse.text();
+        console.error('Add to queue failed:', errorText);
+        throw new Error('Failed to add to queue');
       }
+
+      toast.success(`${validIds.length} images added to queue`);
+
+      // Then trigger processing
+      const processResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/start-processing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // Don't throw error if process fails - queue was added successfully
+      if (processResponse.ok) {
+        toast.success('Processing started!');
+      }
+
+      setSelectedIds(new Set());
+      // Refresh after a short delay to allow backend to update
+      setTimeout(() => fetchData(), 1000);
     } catch (error) {
-      console.error("Batch process error:", error);
-      toast.error("Failed to start processing");
+      console.error("Queue error:", error);
+      toast.error("Error queueing images");
     } finally {
       setIsProcessing(false);
     }
@@ -546,16 +570,29 @@ export function FileListTable({
                     )}
                   </TableCell>
                   <TableCell className="px-1 py-1.5">
-                    <div className="w-10 h-10 rounded bg-muted overflow-hidden">
-                      <img
-                        src={file.thumbnailUrl}
-                        alt={file.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/placeholder.svg";
-                        }}
-                      />
+                    <div className="relative group">
+                      <div className="w-10 h-10 rounded bg-muted overflow-hidden cursor-pointer">
+                        <img
+                          src={file.thumbnailUrl}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                      </div>
+                      {/* Zoom popup on hover */}
+                      <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block">
+                        <img
+                          src={file.thumbnailUrl.replace('sz=w200', 'sz=w400').replace('sz=w100', 'sz=w400')}
+                          alt={file.name}
+                          className="w-64 h-64 object-contain bg-background rounded-lg shadow-2xl border border-border"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="px-1 py-1.5">

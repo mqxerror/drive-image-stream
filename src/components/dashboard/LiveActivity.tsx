@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
-import { Activity, ImageIcon, Loader2, RefreshCw } from "lucide-react";
+import { Activity, ImageIcon, Loader2, RefreshCw, Play } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useApiConfig } from "@/hooks/useApiConfig";
+import { toast } from "sonner";
 
 interface ActivityItem {
   id: number;
@@ -32,6 +34,7 @@ export function LiveActivity({ refreshTrigger, onClear }: LiveActivityProps) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [startingId, setStartingId] = useState<number | null>(null);
 
   const fetchActivity = useCallback(async (showRefreshState = false) => {
     if (showRefreshState) setIsRefreshing(true);
@@ -68,6 +71,29 @@ export function LiveActivity({ refreshTrigger, onClear }: LiveActivityProps) {
     fetchActivity(true);
   };
 
+  const handleStartSpecificImage = async (queueId: number) => {
+    setStartingId(queueId);
+    try {
+      const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/start-processing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queueId }),
+      });
+
+      if (response.ok) {
+        toast.success('Processing started!');
+        fetchActivity(true);
+      } else {
+        toast.error('Failed to start processing');
+      }
+    } catch (error) {
+      console.error('Start processing error:', error);
+      toast.error('Failed to start processing');
+    } finally {
+      setStartingId(null);
+    }
+  };
+
   useEffect(() => {
     // When refreshTrigger changes (e.g., after clearing queue), immediately clear items then fetch
     if (refreshTrigger && refreshTrigger > 0) {
@@ -95,96 +121,122 @@ export function LiveActivity({ refreshTrigger, onClear }: LiveActivityProps) {
   );
 
   return (
-    <Card className="border-border/40 bg-card/50 p-3">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative">
-          <Activity className="h-3.5 w-3.5 text-success" />
+    <TooltipProvider>
+      <Card className="border-border/40 bg-card/50 p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="relative">
+            <Activity className="h-3.5 w-3.5 text-success" />
+            {hasProcessingItems && (
+              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            )}
+          </div>
+          <h3 className="text-xs font-semibold">Live Activity</h3>
           {hasProcessingItems && (
-            <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-[9px] text-amber-400 animate-pulse ml-1">Processing Active</span>
           )}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 ml-auto" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
         </div>
-        <h3 className="text-xs font-semibold">Live Activity</h3>
-        {hasProcessingItems && (
-          <span className="text-[9px] text-amber-400 animate-pulse ml-1">Processing Active</span>
-        )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 ml-auto" 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-      </div>
 
-      {items.length === 0 && !isLoading ? (
-        <div className="text-center py-4 text-muted-foreground">
-          <ImageIcon className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
-          <p className="text-[10px]">Queue Empty</p>
-          <p className="text-[9px] mt-0.5">Add images to process</p>
-        </div>
-      ) : (
-        <>
-          {/* Scrollable queue list - show ALL items */}
-          <div className="max-h-[300px] overflow-y-auto space-y-1.5 pr-1">
-            {items.map((item) => {
-              const config = statusConfig[item.status] || statusConfig.queued;
-              const showProgress = isProcessingStatus(item.status);
-              
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  {/* Thumbnail placeholder */}
-                  <div className="h-7 w-7 rounded bg-muted flex items-center justify-center shrink-0">
-                    <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
+        {items.length === 0 && !isLoading ? (
+          <div className="text-center py-4 text-muted-foreground">
+            <ImageIcon className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
+            <p className="text-[10px]">Queue Empty</p>
+            <p className="text-[9px] mt-0.5">Add images to process</p>
+          </div>
+        ) : (
+          <>
+            {/* Scrollable queue list - show ALL items */}
+            <div className="max-h-[300px] overflow-y-auto space-y-1.5 pr-1">
+              {items.map((item) => {
+                const config = statusConfig[item.status] || statusConfig.queued;
+                const showProgress = isProcessingStatus(item.status);
+                
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    {/* Thumbnail placeholder */}
+                    <div className="h-7 w-7 rounded bg-muted flex items-center justify-center shrink-0">
+                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[11px] font-medium truncate flex-1">{item.filename}</p>
-                      {showProgress && item.progress > 0 && (
-                        <span className="text-[9px] text-muted-foreground shrink-0">
-                          {item.progress}%
-                        </span>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[11px] font-medium truncate flex-1">{item.filename}</p>
+                        {showProgress && item.progress > 0 && (
+                          <span className="text-[9px] text-muted-foreground shrink-0">
+                            {item.progress}%
+                          </span>
+                        )}
+                      </div>
+                      {showProgress && (
+                        <Progress 
+                          value={item.progress || 50} 
+                          className="h-1 mt-1" 
+                        />
                       )}
                     </div>
-                    {showProgress && (
-                      <Progress 
-                        value={item.progress || 50} 
-                        className="h-1 mt-1" 
-                      />
+
+                    {/* Start button for queued items */}
+                    {item.status === "queued" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={() => handleStartSpecificImage(item.id)}
+                            disabled={startingId === item.id}
+                          >
+                            {startingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Play className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs">Start this image</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
+
+                    {/* Status badge */}
+                    <Badge
+                      variant="outline"
+                      className={`text-[9px] px-1.5 py-0 shrink-0 ${config.className} ${
+                        config.animated ? "animate-pulse-glow" : ""
+                      }`}
+                    >
+                      {config.label}
+                    </Badge>
                   </div>
-
-                  {/* Status badge */}
-                  <Badge
-                    variant="outline"
-                    className={`text-[9px] px-1.5 py-0 shrink-0 ${config.className} ${
-                      config.animated ? "animate-pulse-glow" : ""
-                    }`}
-                  >
-                    {config.label}
-                  </Badge>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Queue summary footer */}
-          {items.length > 0 && (
-            <div className="flex justify-between text-[10px] text-muted-foreground pt-2 mt-2 border-t border-border/40">
-              <span>{items.filter(i => i.status === "queued").length} queued</span>
-              <span>{items.filter(i => ["processing", "optimizing"].includes(i.status)).length} processing</span>
-              <span>{items.length} total</span>
+                );
+              })}
             </div>
-          )}
-        </>
-      )}
-    </Card>
+
+            {/* Queue summary footer */}
+            {items.length > 0 && (
+              <div className="flex justify-between text-[10px] text-muted-foreground pt-2 mt-2 border-t border-border/40">
+                <span>{items.filter(i => i.status === "queued").length} queued</span>
+                <span>{items.filter(i => ["processing", "optimizing"].includes(i.status)).length} processing</span>
+                <span>{items.length} total</span>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+    </TooltipProvider>
   );
 }
