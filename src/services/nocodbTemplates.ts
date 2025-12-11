@@ -2,6 +2,12 @@ const BASE_URL = import.meta.env.VITE_NOCODB_BASE_URL;
 const TOKEN = import.meta.env.VITE_NOCODB_API_TOKEN;
 const TABLE_ID = import.meta.env.VITE_NOCODB_TEMPLATES_TABLE_ID;
 
+console.log('NocoDB Config:', {
+  BASE_URL,
+  TOKEN: TOKEN ? 'SET (hidden)' : 'NOT SET',
+  TABLE_ID,
+});
+
 const headers = {
   'Content-Type': 'application/json',
   'xc-token': TOKEN,
@@ -46,24 +52,38 @@ export async function getTemplates(): Promise<NocoDBTemplate[]> {
 
 // CREATE template
 export async function createTemplate(t: Omit<NocoDBTemplate, 'id' | 'isSystem' | 'isActive'>): Promise<NocoDBTemplate> {
+  const payload = {
+    Title: t.name,
+    category: t.category || null,
+    subcategory: t.subcategory || null,
+    base_prompt: t.basePrompt || null,
+    style: t.style || null,
+    background: t.background || null,
+    lighting: t.lighting || null,
+    is_system: false,
+    is_active: true,
+    created_by: 'user',
+  };
+  
+  console.log('Creating template with payload:', JSON.stringify(payload, null, 2));
+  console.log('Request URL:', `${BASE_URL}/api/v2/tables/${TABLE_ID}/records`);
+  
   const res = await fetch(`${BASE_URL}/api/v2/tables/${TABLE_ID}/records`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      Title: t.name,
-      category: t.category || null,
-      subcategory: t.subcategory || null,
-      base_prompt: t.basePrompt || null,
-      style: t.style || null,
-      background: t.background || null,
-      lighting: t.lighting || null,
-      is_system: false,
-      is_active: true,
-      created_by: 'user',
-    }),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('Failed to create template');
-  return mapRecord(await res.json());
+  
+  console.log('Create response status:', res.status);
+  const responseText = await res.text();
+  console.log('Create response body:', responseText);
+  
+  if (!res.ok) {
+    console.error('Create failed with status', res.status, responseText);
+    throw new Error(`Failed to create template: ${res.status} ${responseText}`);
+  }
+  
+  return mapRecord(JSON.parse(responseText));
 }
 
 // UPDATE template
