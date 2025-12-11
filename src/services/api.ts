@@ -258,21 +258,24 @@ export async function createProject(project: Partial<Project>): Promise<Project>
 
 // Update project - uses /project-update endpoint
 export async function updateProject(id: number, project: Partial<Project>): Promise<void> {
+  const body = {
+    projectId: id,
+    name: project.name,
+    inputFolderUrl: project.inputFolderUrl,
+    inputFolderId: project.inputFolderId,
+    outputFolderUrl: project.outputFolderUrl,
+    outputFolderId: project.outputFolderId,
+    templateId: project.templateId,
+    customPrompt: project.customPrompt,
+    resolution: project.resolution,
+  };
+  
+  console.log('DEBUG updateProject - sending:', JSON.stringify(body, null, 2));
+  
   const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/project-update', {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      projectId: id,
-      name: project.name,
-      input_folder_url: project.inputFolderUrl,
-      input_folder_id: project.inputFolderId,
-      output_folder_url: project.outputFolderUrl,
-      output_folder_id: project.outputFolderId,
-      template_id: project.templateId,
-      custom_prompt: project.customPrompt,
-      resolution: project.resolution,
-      trial_count: project.trialCount,
-    }),
+    body: JSON.stringify(body),
   });
   
   if (!response.ok) {
