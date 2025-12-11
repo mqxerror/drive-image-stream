@@ -34,16 +34,15 @@ export function LiveActivity() {
       const response = await fetch(getEndpoint("queue"));
       if (response.ok) {
         const data = await response.json();
-        console.log("Queue API response:", data);
         // Show ALL items, no slicing
         const activityItems: ActivityItem[] = (data.queue || data || [])
-          .map((item: any) => {
+          .map((item: any, index: number) => {
             // Robust filename extraction - handle all possible API formats
+            // Note: Backend may return incomplete queue items without fileName/id
             const filename = item.fileName || item.file_name || item.filename || item.name || 
-                           (item.id ? `Image #${item.id}` : 'Unknown Image');
-            console.log("Queue item:", item, "Extracted filename:", filename);
+                           (item.id ? `Image #${item.id}` : `Queued Item #${index + 1}`);
             return {
-              id: item.id || Math.random(),
+              id: item.id || `queue-${index}`,
               filename,
               status: item.status || "queued",
               progress: item.progress ?? 0,
