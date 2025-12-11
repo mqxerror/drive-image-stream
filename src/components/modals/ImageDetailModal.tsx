@@ -42,13 +42,15 @@ interface ImageDetailModalProps {
   onOpenChange: (open: boolean) => void;
   file: FileItem | null;
   onSaveTemplate?: (prompt: string) => void;
+  onReprocess?: (file: FileItem) => void;
 }
 
 export function ImageDetailModal({ 
   open, 
   onOpenChange, 
   file,
-  onSaveTemplate 
+  onSaveTemplate,
+  onReprocess 
 }: ImageDetailModalProps) {
   const [showOriginal, setShowOriginal] = useState(false);
 
@@ -272,7 +274,17 @@ export function ImageDetailModal({
                     </a>
                   </Button>
                 )}
-                <Button variant="outline" size="sm" className="w-full text-xs">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-xs"
+                  onClick={() => {
+                    if (file && onReprocess) {
+                      onReprocess(file);
+                      onOpenChange(false);
+                    }
+                  }}
+                >
                   <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
                   Redo
                 </Button>
