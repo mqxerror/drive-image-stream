@@ -399,12 +399,16 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
       return;
     }
 
+    console.log('Submitting template with formData:', formData);
+
     setIsSubmitting(true);
     try {
       if (template?.id) {
+        console.log('Updating template ID:', template.id, 'with category:', formData.category);
         await updateTemplate(template.id, formData);
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
+        console.log('Creating template with category:', formData.category);
         await createTemplate(formData);
         toast({ title: "Created", description: "Template has been created." });
       }
@@ -419,9 +423,14 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
 
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
-      setCustomCategories([...customCategories, newCategoryName.trim()]);
-      setFormData(prev => ({ ...prev, category: newCategoryName.trim() }));
-      toast({ title: `Category "${newCategoryName.trim()}" added` });
+      const newCat = newCategoryName.trim();
+      console.log('Adding new category:', newCat);
+      setCustomCategories(prev => [...prev, newCat]);
+      setFormData(prev => {
+        console.log('Setting formData.category to:', newCat);
+        return { ...prev, category: newCat };
+      });
+      toast({ title: `Category "${newCat}" added` });
       setNewCategoryName('');
       setShowAddCategoryModal(false);
     }
