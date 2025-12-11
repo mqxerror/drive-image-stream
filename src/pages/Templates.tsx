@@ -27,9 +27,16 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getTemplates, createTemplate, updateTemplate } from "@/services/api";
+import { 
+  getTemplates, 
+  createTemplate, 
+  updateTemplate, 
+  deleteTemplate,
+  type NocoDBTemplate 
+} from "@/services/nocodbTemplates";
 import { useToast } from "@/hooks/use-toast";
-import type { Template } from "@/types";
+
+type Template = NocoDBTemplate;
 
 const Templates = () => {
   const { toast } = useToast();
@@ -76,10 +83,16 @@ const Templates = () => {
   };
 
   const handleDelete = async (template: Template) => {
-    toast({ 
-      title: "Delete functionality requires backend endpoint", 
-      description: "Contact developer to add DELETE /template-delete endpoint" 
-    });
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    
+    try {
+      await deleteTemplate(template.id);
+      toast({ title: "Deleted", description: "Template has been deleted." });
+      await fetchTemplates();
+    } catch (error) {
+      console.error('Delete template error:', error);
+      toast({ title: "Error", description: "Failed to delete template.", variant: "destructive" });
+    }
   };
 
   const groupByCategory = (list: Template[]) => {
@@ -390,26 +403,15 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
       const existingTemplateId = template?.id;
       const isUpdate = existingTemplateId !== undefined && existingTemplateId !== null;
       
-      console.log('Saving template:', { isUpdate, existingTemplateId, template, formData });
+      console.log('Saving template:', { isUpdate, existingTemplateId, formData });
       
       if (isUpdate) {
-        // PUT to /template-update for existing templates
-        console.log('Using PUT /template-update with templateId:', existingTemplateId);
-        await updateTemplate({
-          id: existingTemplateId,
-          ...formData,
-          isActive: true,
-        });
+        console.log('Using NocoDB PATCH for update, id:', existingTemplateId);
+        await updateTemplate(existingTemplateId, formData);
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
-        // POST to /templates for new templates
-        console.log('Using POST /templates (no templateId)');
-        await createTemplate({
-          ...formData,
-          isSystem: false,
-          isActive: true,
-          createdBy: 'user',
-        });
+        console.log('Using NocoDB POST for create');
+        await createTemplate(formData);
         toast({ title: "Created", description: "Template has been created." });
       }
       
