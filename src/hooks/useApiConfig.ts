@@ -8,6 +8,7 @@ export interface ApiConfig {
     projectUpdate: string;
     projectImages: string;
     templates: string;
+    templateUpdate: string;
     trial: string;
     queue: string;
     history: string;
@@ -28,6 +29,7 @@ export const defaultApiConfig: ApiConfig = {
     projectUpdate: '/project-update',
     projectImages: '/project-images',
     templates: '/templates',
+    templateUpdate: '/template-update',
     trial: '/trial',
     queue: '/queue',
     history: '/history',

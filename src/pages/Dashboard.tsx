@@ -16,6 +16,7 @@ import type { Project } from "@/services/api";
 const Dashboard = () => {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [settingsProject, setSettingsProject] = useState<Project | null>(null);
+  const [activityRefreshTrigger, setActivityRefreshTrigger] = useState(0);
   
   const {
     projects,
@@ -25,6 +26,11 @@ const Dashboard = () => {
     refresh,
     createProject,
   } = useProjects();
+
+  const handleRefreshAll = () => {
+    refresh();
+    setActivityRefreshTrigger(prev => prev + 1);
+  };
 
   const handleCreateProject = async (data: Partial<Project>) => {
     await createProject(data);
@@ -61,12 +67,12 @@ const Dashboard = () => {
 
         {/* Processing Control */}
         <section className="mt-3 animate-fade-in-delay-1">
-          <ProcessingControl onProcessingStarted={refresh} />
+          <ProcessingControl onProcessingStarted={handleRefreshAll} />
         </section>
 
         {/* Live Activity & Recent Results - side by side on desktop */}
         <section className="mt-3 grid gap-3 lg:grid-cols-2 animate-fade-in-delay-1">
-          <LiveActivity />
+          <LiveActivity refreshTrigger={activityRefreshTrigger} />
           <RecentResults />
         </section>
 

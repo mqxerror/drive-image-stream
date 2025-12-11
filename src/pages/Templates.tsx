@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getTemplates, createTemplate } from "@/services/api";
+import { getTemplates, createTemplate, updateTemplate } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Template } from "@/types";
 
@@ -385,15 +385,27 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const templateData = {
-        ...formData,
-        isSystem: false,
-        isActive: true,
-        createdBy: 'user',
-      };
+      const isUpdate = !!template?.id;
       
-      await createTemplate(templateData);
-      toast({ title: template ? "Updated" : "Created", description: `Template has been ${template ? 'updated' : 'created'}.` });
+      if (isUpdate) {
+        // PUT for updates
+        await updateTemplate({
+          id: template.id,
+          ...formData,
+          isActive: true,
+        });
+        toast({ title: "Updated", description: "Template has been updated." });
+      } else {
+        // POST for new templates
+        await createTemplate({
+          ...formData,
+          isSystem: false,
+          isActive: true,
+          createdBy: 'user',
+        });
+        toast({ title: "Created", description: "Template has been created." });
+      }
+      
       await onSave();
     } catch (error) {
       toast({ title: "Error", description: "Failed to save template.", variant: "destructive" });
