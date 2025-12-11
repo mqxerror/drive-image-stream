@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { 
   Settings2, 
   Trash2, 
-  ExternalLink,
-  Loader2,
-  FlaskConical,
   Folder,
 } from "lucide-react";
 import {
@@ -20,8 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
-import { startTrial } from "@/services/api";
 import type { Project } from "@/services/api";
 
 interface ProjectsTableProps {
@@ -42,7 +37,6 @@ export function ProjectsTable({
 }: ProjectsTableProps) {
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -57,24 +51,6 @@ export function ProjectsTable({
       setSelectedIds(prev => [...prev, projectId]);
     } else {
       setSelectedIds(prev => prev.filter(id => id !== projectId));
-    }
-  };
-
-  const handleRunTrial = async (projectId: number, trialCount: number) => {
-    setActionLoading(projectId);
-    try {
-      const result = await startTrial(projectId);
-      if (result.success) {
-        toast.success(`Trial started! Processing ${trialCount} images...`);
-        onRefresh();
-      } else {
-        toast.error(result.message || "Failed to start trial");
-      }
-    } catch (error) {
-      toast.error("Failed to start trial");
-      console.error("Trial error:", error);
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -129,7 +105,7 @@ export function ProjectsTable({
     return (
       <div className="rounded-lg border border-dashed border-border/40 bg-card/30 p-8 text-center">
         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-          <FlaskConical className="h-5 w-5 text-muted-foreground" />
+          <Folder className="h-5 w-5 text-muted-foreground" />
         </div>
         <h3 className="text-sm font-semibold">No projects yet</h3>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -215,20 +191,6 @@ export function ProjectsTable({
               </TableCell>
               <TableCell className="py-2 px-2 text-right" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-end gap-0.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => handleRunTrial(project.id, project.trialCount || 5)}
-                    disabled={actionLoading === project.id || project.status === 'processing'}
-                    title={`Run Trial (${project.trialCount || 5} images)`}
-                  >
-                    {actionLoading === project.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <FlaskConical className="h-3 w-3" />
-                    )}
-                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
