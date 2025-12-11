@@ -277,24 +277,6 @@ export function NewProjectModal({
             )}
           </div>
 
-          {/* Trial Images */}
-          <div className="space-y-2">
-            <Label htmlFor="trialCount">Trial Images</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="trialCount"
-                type="number"
-                min={1}
-                max={20}
-                value={formData.trialCount}
-                onChange={(e) => setFormData({ ...formData, trialCount: parseInt(e.target.value) || 5 })}
-                className="w-20"
-              />
-              <span className="text-sm text-muted-foreground">
-                images to test before full batch
-              </span>
-            </div>
-          </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
