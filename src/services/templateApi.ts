@@ -42,20 +42,27 @@ export async function createTemplate(template: Omit<Template, 'id' | 'isSystem'>
 
 // UPDATE existing template
 export async function updateTemplate(id: number, template: Partial<Template>): Promise<void> {
+  const body = {
+    templateId: id,
+    name: template.name,
+    category: template.category,
+    subcategory: template.subcategory,
+    basePrompt: template.basePrompt,
+    style: template.style,
+    background: template.background,
+    lighting: template.lighting,
+  };
+  console.log('DEBUG updateTemplate API call - body:', JSON.stringify(body));
+  
   const response = await fetch(`${API_BASE}/template-update`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      templateId: id,
-      name: template.name,
-      category: template.category,
-      subcategory: template.subcategory,
-      basePrompt: template.basePrompt,
-      style: template.style,
-      background: template.background,
-      lighting: template.lighting,
-    }),
+    body: JSON.stringify(body),
   });
+  
+  const responseData = await response.json();
+  console.log('DEBUG updateTemplate API response:', JSON.stringify(responseData));
+  
   if (!response.ok) throw new Error('Failed to update template');
 }
 
