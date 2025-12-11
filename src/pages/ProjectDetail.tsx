@@ -88,20 +88,19 @@ const ProjectDetail = () => {
   const handleSaveSettings = async (updates: Partial<Project>) => {
     if (!project) return;
     try {
-      const result = await updateProject(project.id, updates);
-      if (result.success) {
-        setProject(result.project || { ...project, ...updates });
-        toast({
-          title: "Settings saved",
-          description: result.message,
-        });
+      await updateProject(project.id, updates);
+      // Refresh project data after save
+      const projects = await getProjects();
+      const updatedProject = projects.find(p => p.id === project.id);
+      if (updatedProject) {
+        setProject(updatedProject);
       } else {
-        toast({
-          title: "Error",
-          description: result.message || "Failed to save settings",
-          variant: "destructive",
-        });
+        setProject({ ...project, ...updates });
       }
+      toast({
+        title: "Settings saved",
+        description: "Project settings updated successfully",
+      });
     } catch (error) {
       toast({
         title: "Error",

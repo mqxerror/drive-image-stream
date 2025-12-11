@@ -94,18 +94,12 @@ export function ProjectSettingsModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Call the API directly with proper format
-      const result = await updateProject(project.id, formData);
-      
-      if (result.success) {
-        toast.success("Settings saved successfully");
-        // CRITICAL: Wait for parent to refresh data BEFORE closing
-        await onSave(formData);
-        // Now close after parent has refreshed
-        onOpenChange(false);
-      } else {
-        toast.error(result.message || "Failed to save settings");
-      }
+      await updateProject(project.id, formData);
+      toast.success("Settings saved successfully");
+      // CRITICAL: Wait for parent to refresh data BEFORE closing
+      await onSave(formData);
+      // Now close after parent has refreshed
+      onOpenChange(false);
     } catch (error) {
       console.error("Save error:", error);
       toast.error("Failed to save settings");
