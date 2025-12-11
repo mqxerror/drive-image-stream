@@ -76,8 +76,10 @@ const Templates = () => {
   };
 
   const handleDelete = async (template: Template) => {
-    // Note: Delete functionality needs to be added to API
-    toast({ title: "Info", description: "Delete functionality coming soon." });
+    toast({ 
+      title: "Delete functionality requires backend endpoint", 
+      description: "Contact developer to add DELETE /template-delete endpoint" 
+    });
   };
 
   const groupByCategory = (list: Template[]) => {
