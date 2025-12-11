@@ -214,7 +214,10 @@ const Templates = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setEditTemplate(template)}
+                            onClick={() => {
+                              console.log('Edit clicked, template:', template);
+                              setEditTemplate(template);
+                            }}
                             title="Edit"
                           >
                             <Edit className="h-4 w-4" />
@@ -381,6 +384,9 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
   }, [template, open]);
 
   const handleSubmit = async () => {
+    console.log('DEBUG editingTemplate:', JSON.stringify(template));
+    console.log('DEBUG template.id:', template?.id);
+    
     if (!formData.name.trim()) {
       toast({ title: "Error", description: "Template name is required", variant: "destructive" });
       return;
@@ -389,9 +395,11 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
     setIsSubmitting(true);
     try {
       if (template?.id) {
+        console.log('DEBUG: Calling updateTemplate with id:', template.id, 'formData:', formData);
         await updateTemplate(template.id, formData);
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
+        console.log('DEBUG: Calling createTemplate with formData:', formData);
         await createTemplate(formData);
         toast({ title: "Created", description: "Template has been created." });
       }
