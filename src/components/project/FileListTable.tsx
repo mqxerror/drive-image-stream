@@ -162,6 +162,15 @@ export function FileListTable({
         };
       });
 
+      // Debug: log the merged data
+      console.log('FileListTable merged files:', mergedFiles.slice(0, 3).map(f => ({ 
+        name: f.name, 
+        status: f.status, 
+        prompt: f.prompt ? f.prompt.slice(0, 50) + '...' : null,
+        cost: f.cost,
+        optimizedDriveId: f.optimizedDriveId
+      })));
+
       setFiles(mergedFiles);
     } catch (error) {
       console.error("Failed to fetch file data:", error);
@@ -542,7 +551,7 @@ export function FileListTable({
         </div>
 
         {/* File Table */}
-        <div className="rounded-lg border border-border/50 overflow-hidden">
+        <div className="rounded-lg border border-border/50">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/50">
@@ -554,7 +563,7 @@ export function FileListTable({
                 <TableHead className="w-14 text-xs text-right">Cost</TableHead>
                 <TableHead className="w-16 text-xs text-right">Time</TableHead>
                 <TableHead className="w-40 text-xs">Prompt</TableHead>
-                <TableHead className="w-16 text-xs text-right pr-2">Actions</TableHead>
+                <TableHead className="w-24 text-xs text-right pr-2">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -573,48 +582,64 @@ export function FileListTable({
                     )}
                   </TableCell>
                   <TableCell className="px-1 py-1.5">
-                    <div className="relative group">
-                      <div className="w-10 h-10 rounded bg-muted overflow-hidden cursor-pointer">
-                        <img
-                          src={file.thumbnailUrl}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      {/* Zoom popup on hover - use lh3 URL which supports CORS */}
-                      <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block pointer-events-none">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-10 h-10 rounded bg-muted overflow-hidden cursor-pointer">
+                          <img
+                            src={file.thumbnailUrl}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="p-0 border-0 bg-transparent">
                         <img
                           src={`https://lh3.googleusercontent.com/d/${file.id}=s400`}
                           alt={file.name}
                           className="w-64 h-64 object-contain bg-background rounded-lg shadow-2xl border border-border"
                           onError={(e) => {
-                            // Fallback to drive thumbnail if lh3 fails
-                            (e.target as HTMLImageElement).src = file.thumbnailUrl.replace('sz=w200', 'sz=w400').replace('sz=w100', 'sz=w400');
+                            (e.target as HTMLImageElement).src = file.thumbnailUrl.replace('sz=w200', 'sz=w400');
                           }}
                         />
-                      </div>
-                    </div>
+                      </TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell className="px-1 py-1.5">
-                    {file.resultThumbnailUrl ? (
-                      <div
-                        className="w-10 h-10 rounded bg-muted overflow-hidden cursor-pointer ring-1 ring-emerald-500/30 hover:ring-emerald-500/60 transition-all"
-                        onClick={() => openPreview(file)}
-                      >
-                        <img
-                          src={file.resultThumbnailUrl}
-                          alt="Result"
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
+                    {file.resultThumbnailUrl || file.optimizedDriveId ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="w-10 h-10 rounded bg-muted overflow-hidden cursor-pointer ring-1 ring-emerald-500/30 hover:ring-emerald-500/60 transition-all"
+                            onClick={() => openPreview(file)}
+                          >
+                            <img
+                              src={file.resultThumbnailUrl || `https://drive.google.com/thumbnail?id=${file.optimizedDriveId}&sz=w100`}
+                              alt="Result"
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="p-0 border-0 bg-transparent">
+                          <img
+                            src={file.optimizedDriveId 
+                              ? `https://lh3.googleusercontent.com/d/${file.optimizedDriveId}=s400`
+                              : (file.resultThumbnailUrl?.replace('sz=w100', 'sz=w400').replace('sz=w200', 'sz=w400') || '/placeholder.svg')}
+                            alt="Result"
+                            className="w-64 h-64 object-contain bg-background rounded-lg shadow-2xl border border-border"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        </TooltipContent>
+                      </Tooltip>
                     ) : (
                       <div className="w-10 h-10 rounded bg-muted/50 flex items-center justify-center text-muted-foreground/30">
                         -
