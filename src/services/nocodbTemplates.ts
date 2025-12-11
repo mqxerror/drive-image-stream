@@ -44,10 +44,34 @@ function mapRecord(record: any): NocoDBTemplate {
 
 // GET all templates
 export async function getTemplates(): Promise<NocoDBTemplate[]> {
-  const res = await fetch(`${BASE_URL}/api/v2/tables/${TABLE_ID}/records?limit=100`, { headers });
-  if (!res.ok) throw new Error('Failed to fetch templates');
-  const data = await res.json();
-  return (data.list || []).map(mapRecord);
+  const response = await fetch(
+    'https://base.pixelcraftedmedia.com/api/v2/tables/mvi5pcumvlnq4wg/records?limit=100',
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'xc-token': 'EhFxn3xxhotfeqBL3_6OlRs3PDsZLFSF9RE1SqJd',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch templates');
+  }
+
+  const data = await response.json();
+  
+  return (data.list || []).map((record: any) => ({
+    id: record.Id,
+    name: record.Title,
+    category: record.category,
+    subcategory: record.subcategory,
+    basePrompt: record.base_prompt,
+    style: record.style,
+    background: record.background,
+    lighting: record.lighting,
+    isSystem: record.is_system,
+  }));
 }
 
 // CREATE template
