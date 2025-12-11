@@ -42,21 +42,24 @@ export function LiveActivity({ refreshTrigger, onClear }: LiveActivityProps) {
       const response = await fetch(getEndpoint("queue"));
       if (response.ok) {
         const data = await response.json();
-        // Show ALL items, no slicing
-        const activityItems: ActivityItem[] = (data.queue || data || [])
-          .map((item: any, index: number) => {
-            // Robust filename extraction - handle all possible API formats
-            // Note: Backend may return incomplete queue items without fileName/id
-            const filename = item.fileName || item.file_name || item.filename || item.name || 
-                           (item.id ? `Image #${item.id}` : `Queued Item #${index + 1}`);
-            return {
-              id: item.id || `queue-${index}`,
-              filename,
-              status: item.status || "queued",
-              progress: item.progress ?? 0,
-              thumbnailUrl: item.thumbnailUrl,
-            };
-          });
+        const rawQueue = data.queue || data || [];
+        
+        // Filter out invalid/empty items - only include items with valid fileId or fileName
+        const validItems = rawQueue.filter((item: any) => 
+          item && (item.fileId || item.fileName || item.file_name || item.filename || item.name)
+        );
+        
+        const activityItems: ActivityItem[] = validItems.map((item: any, index: number) => {
+          const filename = item.fileName || item.file_name || item.filename || item.name || 
+                         (item.fileId ? `Image ${item.fileId.slice(0, 8)}...` : `Item #${index + 1}`);
+          return {
+            id: item.id || `queue-${index}`,
+            filename,
+            status: item.status || "queued",
+            progress: item.progress ?? 0,
+            thumbnailUrl: item.thumbnailUrl,
+          };
+        });
         setItems(activityItems);
       }
     } catch (error) {
