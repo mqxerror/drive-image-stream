@@ -53,8 +53,6 @@ export async function updateTemplate(id: number, template: Partial<Template>): P
     lighting: template.lighting || '',
   };
   
-  console.log('Updating template with:', requestBody);
-  
   const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/template-update', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
