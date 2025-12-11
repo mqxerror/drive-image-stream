@@ -353,8 +353,9 @@ const DEFAULT_CATEGORIES = ['Jewelry', 'Watches', 'Accessories', 'Clothing', 'Sh
 function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: TemplateFormModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categoryInput, setCategoryInput] = useState('');
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     category: 'General',
@@ -365,13 +366,8 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
     basePrompt: '',
   });
 
-  // Get unique categories from existing templates + defaults
-  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...templates.map(t => t.category).filter(Boolean)])];
-  
-  // Filter categories based on input
-  const filteredCategories = allCategories.filter(cat => 
-    cat.toLowerCase().includes(categoryInput.toLowerCase())
-  );
+  // Get unique categories from existing templates + defaults + custom
+  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...templates.map(t => t.category).filter(Boolean), ...customCategories])];
 
   useEffect(() => {
     if (template) {
@@ -384,7 +380,6 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
         lighting: template.lighting || '',
         basePrompt: template.basePrompt || '',
       });
-      setCategoryInput(template.category || '');
     } else {
       setFormData({
         name: '',
@@ -395,33 +390,22 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
         lighting: '',
         basePrompt: '',
       });
-      setCategoryInput('');
     }
   }, [template, open]);
 
   const handleSubmit = async () => {
-    console.log('DEBUG editingTemplate:', JSON.stringify(template));
-    console.log('DEBUG template.id:', template?.id);
-    
     if (!formData.name.trim()) {
       toast({ title: "Error", description: "Template name is required", variant: "destructive" });
       return;
     }
 
-    const dataToSubmit = {
-      ...formData,
-      category: categoryInput || 'General',
-    };
-
     setIsSubmitting(true);
     try {
       if (template?.id) {
-        console.log('DEBUG: Calling updateTemplate with id:', template.id, 'formData:', dataToSubmit);
-        await updateTemplate(template.id, dataToSubmit);
+        await updateTemplate(template.id, formData);
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
-        console.log('DEBUG: Calling createTemplate with formData:', dataToSubmit);
-        await createTemplate(dataToSubmit);
+        await createTemplate(formData);
         toast({ title: "Created", description: "Template has been created." });
       }
       await onSave();
@@ -433,7 +417,18 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
     }
   };
 
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      setCustomCategories([...customCategories, newCategoryName.trim()]);
+      setFormData(prev => ({ ...prev, category: newCategoryName.trim() }));
+      toast({ title: `Category "${newCategoryName.trim()}" added` });
+      setNewCategoryName('');
+      setShowAddCategoryModal(false);
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -451,45 +446,33 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 relative">
+            <div className="space-y-2">
               <Label>Category</Label>
-              <Input
-                value={categoryInput}
-                onChange={(e) => {
-                  setCategoryInput(e.target.value);
-                  setShowCategoryDropdown(true);
-                }}
-                onFocus={() => setShowCategoryDropdown(true)}
-                onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 200)}
-                placeholder="Select or type new..."
-              />
-              
-              {showCategoryDropdown && filteredCategories.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto top-full">
-                  {filteredCategories.map((cat) => (
-                    <div
-                      key={cat}
-                      className="px-3 py-2 cursor-pointer hover:bg-muted text-sm"
-                      onMouseDown={() => {
-                        setCategoryInput(cat);
-                        setShowCategoryDropdown(false);
-                      }}
-                    >
-                      {cat}
-                    </div>
-                  ))}
-                  {categoryInput && !filteredCategories.some(c => c.toLowerCase() === categoryInput.toLowerCase()) && (
-                    <div
-                      className="px-3 py-2 cursor-pointer hover:bg-muted text-sm text-primary border-t border-border"
-                      onMouseDown={() => {
-                        setShowCategoryDropdown(false);
-                      }}
-                    >
-                      + Create "{categoryInput}"
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="flex gap-2">
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setShowAddCategoryModal(true)}
+                  title="Add new category"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Subcategory</Label>
@@ -573,6 +556,38 @@ function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: 
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Add Category Modal */}
+    <Dialog open={showAddCategoryModal} onOpenChange={setShowAddCategoryModal}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Add New Category</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Category Name</Label>
+            <Input
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="e.g. Electronics, Home Decor..."
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+            />
+          </div>
+        </div>
+        
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setShowAddCategoryModal(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddCategory} disabled={!newCategoryName.trim()}>
+            Add Category
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
