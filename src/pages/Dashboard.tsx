@@ -108,7 +108,10 @@ const Dashboard = () => {
           onOpenChange={(open) => !open && setSettingsProject(null)}
           project={settingsProject}
           templates={templates}
-          onSave={async () => {
+          onSave={async (updates) => {
+            // Update the settingsProject with new values immediately
+            setSettingsProject(prev => prev ? { ...prev, ...updates } : null);
+            // Then refresh to get latest from server
             await refresh();
             setSettingsProject(null);
           }}
