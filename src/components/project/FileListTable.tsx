@@ -67,7 +67,7 @@ export interface FileItem {
 interface FileListTableProps {
   projectId: number;
   trialCount: number;
-  onStartTrial: (selectedImageIds: string[]) => Promise<void>;
+  onStartTrial: (selectedImageIds: string[], imageNames: Record<string, string>) => Promise<void>;
   onQueueAndProcess?: (selectedImageIds: string[]) => void;
   isTrialLoading?: boolean;
   inputFolderId?: string | null;
@@ -216,9 +216,16 @@ export function FileListTable({
       return;
     }
     
+    // Build imageNames map: {fileId: fileName}
+    const imageNames: Record<string, string> = {};
+    validIds.forEach(id => {
+      const file = files.find(f => f.id === id);
+      if (file) imageNames[id] = file.name;
+    });
+    
     // Call the parent's onStartTrial and wait for it to complete
     try {
-      await onStartTrial(validIds);
+      await onStartTrial(validIds, imageNames);
       // Only show success and clear selection after API completes
       toast.success(`${validIds.length} images added to queue`, {
         description: "Go to Dashboard to start processing",

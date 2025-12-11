@@ -56,11 +56,11 @@ const ProjectDetail = () => {
     // No auto-polling - only refresh on user action
   }, [fetchData]);
 
-  const handleStartTrial = async (selectedImageIds: string[]) => {
+  const handleStartTrial = async (selectedImageIds: string[], imageNames: Record<string, string>) => {
     if (!project) return;
     setActionLoading(true);
     try {
-      const result = await startTrial(project.id, selectedImageIds);
+      const result = await startTrial(project.id, selectedImageIds, imageNames);
       if (result.success) {
         toast({ 
           title: "Trial started", 

@@ -339,11 +339,15 @@ export async function getProjectImages(projectId: number): Promise<ProjectImages
 }
 
 // Start trial - processes selected images from project's input folder
-export async function startTrial(projectId: number, imageIds?: string[]): Promise<{ success: boolean; message: string }> {
+export async function startTrial(
+  projectId: number, 
+  imageIds?: string[],
+  imageNames?: Record<string, string>  // {fileId: fileName}
+): Promise<{ success: boolean; message: string }> {
   const response = await fetch(getEndpoint('trial'), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ projectId, imageIds }),
+    body: JSON.stringify({ projectId, imageIds, imageNames }),
   });
   if (!response.ok) throw new Error("Failed to start trial");
   const data = await response.json();
