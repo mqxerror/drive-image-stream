@@ -36,6 +36,10 @@ import {
 } from "@/services/templateApi";
 import { useToast } from "@/hooks/use-toast";
 
+const CATEGORIES = ['Jewelry', 'Product', 'Fashion', 'Food', 'Other'];
+const STYLES = ['Premium', 'Elegant', 'Standard', 'Lifestyle', 'Minimal'];
+const BACKGROUNDS = ['White', 'Gradient', 'Transparent', 'Natural', 'Custom'];
+
 const Templates = () => {
   const { toast } = useToast();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -52,31 +56,29 @@ const Templates = () => {
       setTemplates(data);
     } catch (error) {
       console.error("Failed to fetch templates:", error);
+      toast({ title: "Error", description: "Failed to load templates", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
 
   const categories = [...new Set(templates.map((t) => t.category))];
-  
-  const systemTemplates = templates.filter((t) => t.isSystem);
-  const userTemplates = templates.filter((t) => !t.isSystem);
 
   const filterTemplates = (list: Template[]) => {
     return list.filter((t) => {
       const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.basePrompt.toLowerCase().includes(searchQuery.toLowerCase());
+        (t.basePrompt || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === "all" || t.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
   };
 
   const handleCopy = (template: Template) => {
-    navigator.clipboard.writeText(template.basePrompt);
+    navigator.clipboard.writeText(template.basePrompt || '');
     toast({ title: "Copied", description: "Prompt copied to clipboard." });
   };
 
@@ -96,16 +98,16 @@ const Templates = () => {
   const groupByCategory = (list: Template[]) => {
     const grouped: Record<string, Template[]> = {};
     list.forEach((t) => {
-      if (!grouped[t.category]) {
-        grouped[t.category] = [];
+      const cat = t.category || 'Other';
+      if (!grouped[cat]) {
+        grouped[cat] = [];
       }
-      grouped[t.category].push(t);
+      grouped[cat].push(t);
     });
     return grouped;
   };
 
-  const filteredSystem = groupByCategory(filterTemplates(systemTemplates));
-  const filteredUser = filterTemplates(userTemplates);
+  const filteredTemplates = groupByCategory(filterTemplates(templates));
 
   if (isLoading) {
     return (
@@ -158,108 +160,62 @@ const Templates = () => {
           </div>
         </div>
 
-        {/* System Templates */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span className="text-primary">📌</span> System Templates
-          </h2>
-
-          {Object.entries(filteredSystem).map(([category, categoryTemplates]) => (
-            <div key={category} className="mb-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                {category === 'Jewelry' && '💎'} {category === 'Fashion' && '👗'} {category}
-              </h3>
-              <div className="rounded-lg border border-border/50 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead>Name</TableHead>
-                      <TableHead>Style</TableHead>
-                      <TableHead>Background</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categoryTemplates.map((template) => (
-                      <TableRow key={template.id} className="hover:bg-muted/20">
-                        <TableCell className="font-medium">{template.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{template.style}</Badge>
-                        </TableCell>
-                        <TableCell>{template.background}</TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => setPreviewTemplate(template)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleCopy(template)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        {/* User Templates */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <span>👤</span> My Templates
-          </h2>
-
-          {filteredUser.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center">
-              <p className="text-muted-foreground">No custom templates yet</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setIsNewModalOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create Your First Template
-              </Button>
-            </div>
-          ) : (
+        {/* All Templates grouped by category */}
+        {Object.entries(filteredTemplates).map(([category, categoryTemplates]) => (
+          <section key={category} className="mb-8">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              {category === 'Jewelry' && '💎'}
+              {category === 'Fashion' && '👗'}
+              {category === 'Product' && '📦'}
+              {category === 'Food' && '🍽️'}
+              {category === 'Other' && '📁'}
+              {category}
+              <Badge variant="secondary" className="ml-2">{categoryTemplates.length}</Badge>
+            </h2>
             <div className="rounded-lg border border-border/50 overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
                     <TableHead>Name</TableHead>
+                    <TableHead>Subcategory</TableHead>
                     <TableHead>Style</TableHead>
                     <TableHead>Background</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUser.map((template) => (
+                  {categoryTemplates.map((template) => (
                     <TableRow key={template.id} className="hover:bg-muted/20">
-                      <TableCell className="font-medium">{template.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{template.style}</Badge>
+                      <TableCell className="font-medium">
+                        {template.name}
+                        {template.isSystem && (
+                          <Badge variant="outline" className="ml-2 text-xs">System</Badge>
+                        )}
                       </TableCell>
-                      <TableCell>{template.background}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {template.subcategory || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{template.style || '-'}</Badge>
+                      </TableCell>
+                      <TableCell>{template.background || '-'}</TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
+                            onClick={() => setPreviewTemplate(template)}
+                            title="Preview"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => setEditTemplate(template)}
+                            title="Edit"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -268,6 +224,7 @@ const Templates = () => {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleDelete(template)}
+                            title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -276,6 +233,7 @@ const Templates = () => {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => handleCopy(template)}
+                            title="Copy prompt"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -286,8 +244,22 @@ const Templates = () => {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </section>
+          </section>
+        ))}
+
+        {Object.keys(filteredTemplates).length === 0 && (
+          <div className="rounded-xl border border-dashed border-border/50 bg-card/30 p-8 text-center">
+            <p className="text-muted-foreground">No templates found</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => setIsNewModalOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Your First Template
+            </Button>
+          </div>
+        )}
       </main>
 
       {/* Preview Modal */}
@@ -303,6 +275,10 @@ const Templates = () => {
                 <span className="ml-2">{previewTemplate?.category}</span>
               </div>
               <div>
+                <span className="text-muted-foreground">Subcategory:</span>
+                <span className="ml-2">{previewTemplate?.subcategory || '-'}</span>
+              </div>
+              <div>
                 <span className="text-muted-foreground">Style:</span>
                 <span className="ml-2">{previewTemplate?.style}</span>
               </div>
@@ -312,17 +288,26 @@ const Templates = () => {
               </div>
               <div>
                 <span className="text-muted-foreground">Lighting:</span>
-                <span className="ml-2">{previewTemplate?.lighting}</span>
+                <span className="ml-2">{previewTemplate?.lighting || '-'}</span>
               </div>
             </div>
             <div>
               <Label className="text-muted-foreground">Base Prompt:</Label>
-              <div className="mt-2 rounded-lg bg-muted/50 p-3 text-sm">
-                {previewTemplate?.basePrompt}
+              <div className="mt-2 rounded-lg bg-muted/50 p-3 text-sm whitespace-pre-wrap">
+                {previewTemplate?.basePrompt || 'No prompt defined'}
               </div>
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              if (previewTemplate) {
+                setPreviewTemplate(null);
+                setEditTemplate(previewTemplate);
+              }
+            }}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
             <Button variant="outline" onClick={() => previewTemplate && handleCopy(previewTemplate)}>
               <Copy className="mr-2 h-4 w-4" />
               Copy Prompt
@@ -363,10 +348,10 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    category: 'Product',
     subcategory: '',
-    style: '',
-    background: '',
+    style: 'Standard',
+    background: 'White',
     lighting: '',
     basePrompt: '',
   });
@@ -374,45 +359,42 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
   useEffect(() => {
     if (template) {
       setFormData({
-        name: template.name,
-        category: template.category,
-        subcategory: template.subcategory,
-        style: template.style,
-        background: template.background,
-        lighting: template.lighting,
-        basePrompt: template.basePrompt,
+        name: template.name || '',
+        category: template.category || 'Product',
+        subcategory: template.subcategory || '',
+        style: template.style || 'Standard',
+        background: template.background || 'White',
+        lighting: template.lighting || '',
+        basePrompt: template.basePrompt || '',
       });
     } else {
       setFormData({
         name: '',
-        category: '',
+        category: 'Product',
         subcategory: '',
-        style: '',
-        background: '',
+        style: 'Standard',
+        background: 'White',
         lighting: '',
         basePrompt: '',
       });
     }
-  }, [template]);
+  }, [template, open]);
 
   const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast({ title: "Error", description: "Template name is required", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const existingTemplateId = template?.id;
-      const isUpdate = existingTemplateId !== undefined && existingTemplateId !== null;
-      
-      console.log('Saving template:', { isUpdate, existingTemplateId, formData });
-      
-      if (isUpdate) {
-        console.log('Using NocoDB PATCH for update, id:', existingTemplateId);
-        await updateTemplate(existingTemplateId, formData);
+      if (template?.id) {
+        await updateTemplate(template.id, formData);
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
-        console.log('Using NocoDB POST for create');
         await createTemplate(formData);
         toast({ title: "Created", description: "Template has been created." });
       }
-      
       await onSave();
     } catch (error) {
       console.error('Save template error:', error);
@@ -431,7 +413,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>Name *</Label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -442,18 +424,26 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="e.g., Jewelry"
-              />
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Subcategory</Label>
               <Input
                 value={formData.subcategory}
                 onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                placeholder="e.g., Rings"
+                placeholder="e.g., Rings, Necklaces"
               />
             </div>
           </div>
@@ -461,19 +451,35 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Style</Label>
-              <Input
-                value={formData.style}
-                onChange={(e) => setFormData({ ...formData, style: e.target.value })}
-                placeholder="e.g., Luxury"
-              />
+              <Select 
+                value={formData.style} 
+                onValueChange={(value) => setFormData({ ...formData, style: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select style" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STYLES.map((style) => (
+                    <SelectItem key={style} value={style}>{style}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Background</Label>
-              <Input
-                value={formData.background}
-                onChange={(e) => setFormData({ ...formData, background: e.target.value })}
-                placeholder="e.g., White"
-              />
+              <Select 
+                value={formData.background} 
+                onValueChange={(value) => setFormData({ ...formData, background: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select background" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BACKGROUNDS.map((bg) => (
+                    <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -482,7 +488,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
             <Input
               value={formData.lighting}
               onChange={(e) => setFormData({ ...formData, lighting: e.target.value })}
-              placeholder="e.g., Studio softbox"
+              placeholder="e.g., Studio softbox, Natural daylight"
             />
           </div>
 
@@ -491,19 +497,25 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
             <Textarea
               value={formData.basePrompt}
               onChange={(e) => setFormData({ ...formData, basePrompt: e.target.value })}
-              placeholder="Professional jewelry photography..."
+              placeholder="Enter the base prompt for image optimization..."
               rows={6}
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name.trim() || !formData.basePrompt.trim()}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {template ? 'Update' : 'Create'}
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              template ? 'Update Template' : 'Create Template'
+            )}
           </Button>
         </div>
       </DialogContent>

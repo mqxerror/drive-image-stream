@@ -12,32 +12,59 @@ export interface Template {
   isSystem: boolean;
 }
 
+// GET all templates
 export async function getTemplates(): Promise<Template[]> {
-  const res = await fetch(`${API_BASE}/templates`);
-  if (!res.ok) throw new Error('Failed to fetch');
-  const data = await res.json();
+  const response = await fetch(`${API_BASE}/templates`);
+  if (!response.ok) throw new Error('Failed to fetch templates');
+  const data = await response.json();
   return data.templates || [];
 }
 
-export async function createTemplate(template: any): Promise<Template> {
-  const res = await fetch(`${API_BASE}/templates`, {
+// CREATE new template
+export async function createTemplate(template: Omit<Template, 'id' | 'isSystem'>): Promise<Template> {
+  const response = await fetch(`${API_BASE}/templates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(template),
+    body: JSON.stringify({
+      name: template.name,
+      category: template.category || 'General',
+      subcategory: template.subcategory || '',
+      basePrompt: template.basePrompt || '',
+      style: template.style || 'Modern',
+      background: template.background || 'White',
+      lighting: template.lighting || '',
+    }),
   });
-  if (!res.ok) throw new Error('Failed to create');
-  return (await res.json()).template;
+  if (!response.ok) throw new Error('Failed to create template');
+  const data = await response.json();
+  return data.template;
 }
 
-export async function updateTemplate(id: number, template: any): Promise<void> {
-  const res = await fetch(`${API_BASE}/template-update`, {
+// UPDATE existing template
+export async function updateTemplate(id: number, template: Partial<Template>): Promise<void> {
+  const response = await fetch(`${API_BASE}/template-update`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ templateId: id, ...template }),
+    body: JSON.stringify({
+      templateId: id,
+      name: template.name,
+      category: template.category,
+      subcategory: template.subcategory,
+      basePrompt: template.basePrompt,
+      style: template.style,
+      background: template.background,
+      lighting: template.lighting,
+    }),
   });
-  if (!res.ok) throw new Error('Failed to update');
+  if (!response.ok) throw new Error('Failed to update template');
 }
 
+// DELETE template
 export async function deleteTemplate(id: number): Promise<void> {
-  alert('Delete coming soon');
+  const response = await fetch(`${API_BASE}/template-delete`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ templateId: id }),
+  });
+  if (!response.ok) throw new Error('Failed to delete template');
 }
