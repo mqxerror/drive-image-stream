@@ -34,15 +34,22 @@ export function LiveActivity() {
       const response = await fetch(getEndpoint("queue"));
       if (response.ok) {
         const data = await response.json();
+        console.log("Queue API response:", data);
         // Show ALL items, no slicing
         const activityItems: ActivityItem[] = (data.queue || data || [])
-          .map((item: any) => ({
-            id: item.id,
-            filename: item.fileName || item.filename || `Image ${item.id}`,
-            status: item.status || "queued",
-            progress: item.progress ?? 0,
-            thumbnailUrl: item.thumbnailUrl,
-          }));
+          .map((item: any) => {
+            // Robust filename extraction - handle all possible API formats
+            const filename = item.fileName || item.file_name || item.filename || item.name || 
+                           (item.id ? `Image #${item.id}` : 'Unknown Image');
+            console.log("Queue item:", item, "Extracted filename:", filename);
+            return {
+              id: item.id || Math.random(),
+              filename,
+              status: item.status || "queued",
+              progress: item.progress ?? 0,
+              thumbnailUrl: item.thumbnailUrl,
+            };
+          });
         setItems(activityItems);
       }
     } catch (error) {

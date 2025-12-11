@@ -8,48 +8,51 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
+  // Debug: log stats to verify data is coming through
+  console.log("StatsCards received:", stats);
+  
   const cards = [
     {
       title: "Processing",
       value: stats?.processingNow ?? 0,
       icon: Zap,
       gradient: "from-amber-500/20 to-amber-600/5",
-      iconBg: "bg-amber/20",
-      iconColor: "text-amber",
-      pulse: true,
+      iconBg: "bg-amber-500/20",
+      iconColor: "text-amber-500",
+      pulse: (stats?.processingNow ?? 0) > 0,
     },
     {
       title: "In Queue",
       value: stats?.totalPending ?? 0,
       icon: Clock,
-      gradient: "from-info/20 to-info/5",
-      iconBg: "bg-info/20",
-      iconColor: "text-info",
+      gradient: "from-blue-500/20 to-blue-600/5",
+      iconBg: "bg-blue-500/20",
+      iconColor: "text-blue-500",
     },
     {
       title: "Completed",
       value: stats?.totalProcessed ?? 0,
       icon: CheckCircle2,
-      gradient: "from-success/20 to-success/5",
-      iconBg: "bg-success/20",
-      iconColor: "text-success",
+      gradient: "from-green-500/20 to-green-600/5",
+      iconBg: "bg-green-500/20",
+      iconColor: "text-green-500",
     },
     {
       title: "Failed",
       value: stats?.totalFailed ?? 0,
       icon: AlertCircle,
-      gradient: "from-destructive/20 to-destructive/5",
-      iconBg: "bg-destructive/20",
-      iconColor: "text-destructive",
+      gradient: "from-red-500/20 to-red-600/5",
+      iconBg: "bg-red-500/20",
+      iconColor: "text-red-500",
     },
     {
       title: "Cost Today",
       value: `$${(stats?.costToday ?? 0).toFixed(2)}`,
       subValue: `All time: $${(stats?.totalCost ?? 0).toFixed(2)}`,
       icon: DollarSign,
-      gradient: "from-purple/20 to-purple/5",
-      iconBg: "bg-purple/20",
-      iconColor: "text-purple",
+      gradient: "from-purple-500/20 to-purple-600/5",
+      iconBg: "bg-purple-500/20",
+      iconColor: "text-purple-500",
     },
   ];
 
