@@ -387,18 +387,23 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const isUpdate = !!template?.id;
+      const existingTemplateId = template?.id;
+      const isUpdate = existingTemplateId !== undefined && existingTemplateId !== null;
+      
+      console.log('Saving template:', { isUpdate, existingTemplateId, template, formData });
       
       if (isUpdate) {
-        // PUT for updates
+        // PUT to /template-update for existing templates
+        console.log('Using PUT /template-update with templateId:', existingTemplateId);
         await updateTemplate({
-          id: template.id,
+          id: existingTemplateId,
           ...formData,
           isActive: true,
         });
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
-        // POST for new templates
+        // POST to /templates for new templates
+        console.log('Using POST /templates (no templateId)');
         await createTemplate({
           ...formData,
           isSystem: false,
@@ -410,6 +415,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
       
       await onSave();
     } catch (error) {
+      console.error('Save template error:', error);
       toast({ title: "Error", description: "Failed to save template.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
