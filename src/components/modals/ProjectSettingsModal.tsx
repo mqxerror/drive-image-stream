@@ -42,12 +42,11 @@ export function ProjectSettingsModal({
     name: project.name,
     templateId: project.templateId,
     resolution: project.resolution,
-    customPrompt: project.customPrompt,
+    customPrompt: project.customPrompt || '',
     inputFolderUrl: project.inputFolderUrl,
     inputFolderId: project.inputFolderId,
     outputFolderUrl: project.outputFolderUrl,
     outputFolderId: project.outputFolderId,
-    trialCount: project.trialCount || 5,
   });
 
   // Reset form when project changes
@@ -56,39 +55,30 @@ export function ProjectSettingsModal({
       name: project.name,
       templateId: project.templateId,
       resolution: project.resolution,
-      customPrompt: project.customPrompt,
+      customPrompt: project.customPrompt || '',
       inputFolderUrl: project.inputFolderUrl,
       inputFolderId: project.inputFolderId,
       outputFolderUrl: project.outputFolderUrl,
       outputFolderId: project.outputFolderId,
-      trialCount: project.trialCount || 5,
     });
   }, [project]);
 
   const handleInputUrlChange = (url: string) => {
     const folderId = parseFolderId(url);
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       inputFolderUrl: url,
       inputFolderId: folderId,
-    });
+    }));
   };
 
   const handleOutputUrlChange = (url: string) => {
     const folderId = parseFolderId(url);
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       outputFolderUrl: url,
       outputFolderId: folderId,
-    });
-  };
-
-  const handleTrialCountChange = (value: string) => {
-    const num = parseInt(value) || 1;
-    setFormData({
-      ...formData,
-      trialCount: Math.max(1, Math.min(10, num)),
-    });
+    }));
   };
 
   const handleSave = async () => {
@@ -122,9 +112,7 @@ export function ProjectSettingsModal({
             <Input
               id="projectName"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Project name"
             />
           </div>
@@ -134,12 +122,10 @@ export function ProjectSettingsModal({
             <Label>Template</Label>
             <Select
               value={formData.templateId?.toString() || ""}
-              onValueChange={(value) =>
-                setFormData({
-                  ...formData,
-                  templateId: value ? parseInt(value) : null,
-                })
-              }
+              onValueChange={(value) => setFormData(prev => ({
+                ...prev,
+                templateId: value ? parseInt(value) : null,
+              }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a template" />
@@ -159,9 +145,7 @@ export function ProjectSettingsModal({
             <Label>Resolution</Label>
             <RadioGroup
               value={formData.resolution}
-              onValueChange={(value) =>
-                setFormData({ ...formData, resolution: value })
-              }
+              onValueChange={(value) => setFormData(prev => ({ ...prev, resolution: value }))}
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">
@@ -177,23 +161,6 @@ export function ProjectSettingsModal({
                 </Label>
               </div>
             </RadioGroup>
-          </div>
-
-          {/* Trial Images Count */}
-          <div className="space-y-2">
-            <Label htmlFor="trialCount">Trial Images</Label>
-            <Input
-              id="trialCount"
-              type="number"
-              min={1}
-              max={10}
-              value={formData.trialCount}
-              onChange={(e) => handleTrialCountChange(e.target.value)}
-              className="w-24"
-            />
-            <p className="text-xs text-muted-foreground">
-              Number of images to process in a trial (1-10)
-            </p>
           </div>
 
           {/* Input Folder URL */}
@@ -231,10 +198,8 @@ export function ProjectSettingsModal({
             <Label htmlFor="customPrompt">Custom Prompt Override</Label>
             <Textarea
               id="customPrompt"
-              value={formData.customPrompt}
-              onChange={(e) =>
-                setFormData({ ...formData, customPrompt: e.target.value })
-              }
+              value={formData.customPrompt || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, customPrompt: e.target.value }))}
               placeholder="Override the template prompt for this project..."
               rows={4}
             />
