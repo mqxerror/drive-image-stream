@@ -329,6 +329,7 @@ const Templates = () => {
           }
         }}
         template={editTemplate}
+        templates={templates}
         onSave={async () => {
           await fetchTemplates();
           setIsNewModalOpen(false);
@@ -343,15 +344,20 @@ interface TemplateFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template: Template | null;
+  templates: Template[];
   onSave: () => Promise<void>;
 }
 
-function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFormModalProps) {
+const DEFAULT_CATEGORIES = ['Jewelry', 'Watches', 'Accessories', 'Clothing', 'Shoes', 'Bags', 'General'];
+
+function TemplateFormModal({ open, onOpenChange, template, templates, onSave }: TemplateFormModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryInput, setCategoryInput] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Product',
+    category: 'General',
     subcategory: '',
     style: 'Standard',
     background: 'White',
@@ -359,27 +365,37 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
     basePrompt: '',
   });
 
+  // Get unique categories from existing templates + defaults
+  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...templates.map(t => t.category).filter(Boolean)])];
+  
+  // Filter categories based on input
+  const filteredCategories = allCategories.filter(cat => 
+    cat.toLowerCase().includes(categoryInput.toLowerCase())
+  );
+
   useEffect(() => {
     if (template) {
       setFormData({
         name: template.name || '',
-        category: template.category || 'Product',
+        category: template.category || 'General',
         subcategory: template.subcategory || '',
         style: template.style || 'Standard',
         background: template.background || 'White',
         lighting: template.lighting || '',
         basePrompt: template.basePrompt || '',
       });
+      setCategoryInput(template.category || '');
     } else {
       setFormData({
         name: '',
-        category: 'Product',
+        category: 'General',
         subcategory: '',
         style: 'Standard',
         background: 'White',
         lighting: '',
         basePrompt: '',
       });
+      setCategoryInput('');
     }
   }, [template, open]);
 
@@ -392,15 +408,20 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
       return;
     }
 
+    const dataToSubmit = {
+      ...formData,
+      category: categoryInput || 'General',
+    };
+
     setIsSubmitting(true);
     try {
       if (template?.id) {
-        console.log('DEBUG: Calling updateTemplate with id:', template.id, 'formData:', formData);
-        await updateTemplate(template.id, formData);
+        console.log('DEBUG: Calling updateTemplate with id:', template.id, 'formData:', dataToSubmit);
+        await updateTemplate(template.id, dataToSubmit);
         toast({ title: "Updated", description: "Template has been updated." });
       } else {
-        console.log('DEBUG: Calling createTemplate with formData:', formData);
-        await createTemplate(formData);
+        console.log('DEBUG: Calling createTemplate with formData:', dataToSubmit);
+        await createTemplate(dataToSubmit);
         toast({ title: "Created", description: "Template has been created." });
       }
       await onSave();
@@ -430,21 +451,45 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label>Category</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              <Input
+                value={categoryInput}
+                onChange={(e) => {
+                  setCategoryInput(e.target.value);
+                  setShowCategoryDropdown(true);
+                }}
+                onFocus={() => setShowCategoryDropdown(true)}
+                onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 200)}
+                placeholder="Select or type new..."
+              />
+              
+              {showCategoryDropdown && filteredCategories.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto top-full">
+                  {filteredCategories.map((cat) => (
+                    <div
+                      key={cat}
+                      className="px-3 py-2 cursor-pointer hover:bg-muted text-sm"
+                      onMouseDown={() => {
+                        setCategoryInput(cat);
+                        setShowCategoryDropdown(false);
+                      }}
+                    >
+                      {cat}
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
+                  {categoryInput && !filteredCategories.some(c => c.toLowerCase() === categoryInput.toLowerCase()) && (
+                    <div
+                      className="px-3 py-2 cursor-pointer hover:bg-muted text-sm text-primary border-t border-border"
+                      onMouseDown={() => {
+                        setShowCategoryDropdown(false);
+                      }}
+                    >
+                      + Create "{categoryInput}"
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Subcategory</Label>
