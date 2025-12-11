@@ -563,10 +563,10 @@ export function FileListTable({
                 <TableHead className="w-14 px-1 text-xs">Original</TableHead>
                 <TableHead className="w-14 px-1 text-xs">Result</TableHead>
                 <TableHead className="text-xs">Filename</TableHead>
-                <TableHead className="w-20 text-xs">Status</TableHead>
-                <TableHead className="w-14 text-xs text-right">Cost</TableHead>
-                <TableHead className="w-16 text-xs text-right">Time</TableHead>
                 <TableHead className="w-40 text-xs">Prompt</TableHead>
+                <TableHead className="w-20 text-xs">Status</TableHead>
+                <TableHead className="w-16 text-xs text-right">Time</TableHead>
+                <TableHead className="w-28 text-xs">Final URL</TableHead>
                 <TableHead className="w-24 text-xs text-right pr-2">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -660,13 +660,6 @@ export function FileListTable({
                       </TooltipContent>
                     </Tooltip>
                   </TableCell>
-                  <TableCell className="py-1.5">{getStatusBadge(file.status)}</TableCell>
-                  <TableCell className="py-1.5 text-xs text-right text-muted-foreground">
-                    {file.cost ? `$${file.cost.toFixed(2)}` : "-"}
-                  </TableCell>
-                  <TableCell className="py-1.5 text-xs text-right text-muted-foreground">
-                    {formatTime(file.timeSeconds)}
-                  </TableCell>
                   <TableCell className="py-1.5">
                     {file.prompt ? (
                       <Popover>
@@ -708,6 +701,24 @@ export function FileListTable({
                           </div>
                         </PopoverContent>
                       </Popover>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/50">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1.5">{getStatusBadge(file.status)}</TableCell>
+                  <TableCell className="py-1.5 text-xs text-right text-muted-foreground">
+                    {formatTime(file.timeSeconds)}
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    {file.optimizedDriveId ? (
+                      <a
+                        href={`https://drive.google.com/file/d/${file.optimizedDriveId}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-primary hover:underline truncate block max-w-[100px]"
+                      >
+                        Open in Drive
+                      </a>
                     ) : (
                       <span className="text-[10px] text-muted-foreground/50">-</span>
                     )}
