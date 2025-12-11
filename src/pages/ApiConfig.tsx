@@ -20,6 +20,7 @@ const endpointMethods: Record<EndpointName, string> = {
   projectUpdate: 'PUT',
   projectImages: 'GET',
   templates: 'GET, POST',
+  templateUpdate: 'PUT',
   trial: 'POST',
   queue: 'GET',
   history: 'GET',
@@ -35,6 +36,8 @@ const getTestConfig = (name: EndpointName): { method: string; body?: object } =>
       return { method: 'POST', body: { projectId: 1 } };
     case 'projectUpdate':
       return { method: 'PUT', body: { projectId: 1, name: 'Test' } };
+    case 'templateUpdate':
+      return { method: 'PUT', body: { templateId: 1, name: 'Test' } };
     case 'trigger':
       return { method: 'POST', body: {} };
     case 'redo':

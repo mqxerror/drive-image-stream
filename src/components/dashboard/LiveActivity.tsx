@@ -22,7 +22,11 @@ const statusConfig: Record<string, { label: string; className: string; animated?
   failed: { label: "Failed", className: "bg-destructive/20 text-destructive border-destructive/30" },
 };
 
-export function LiveActivity() {
+interface LiveActivityProps {
+  refreshTrigger?: number;
+}
+
+export function LiveActivity({ refreshTrigger }: LiveActivityProps) {
   const { getEndpoint } = useApiConfig();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +69,7 @@ export function LiveActivity() {
 
   useEffect(() => {
     fetchActivity();
-  }, [fetchActivity]);
+  }, [fetchActivity, refreshTrigger]);
 
   // Auto-refresh when processing is active
   useEffect(() => {
