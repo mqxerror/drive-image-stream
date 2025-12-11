@@ -42,26 +42,28 @@ export async function createTemplate(template: Omit<Template, 'id' | 'isSystem'>
 
 // UPDATE existing template
 export async function updateTemplate(id: number, template: Partial<Template>): Promise<void> {
+  const requestBody = {
+    templateId: id,
+    name: template.name,
+    category: template.category || 'General',
+    subcategory: template.subcategory || '',
+    basePrompt: template.basePrompt || '',
+    style: template.style || 'Modern',
+    background: template.background || 'White',
+    lighting: template.lighting || '',
+  };
+  
+  console.log('Updating template with:', requestBody);
+  
   const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/template-update', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      templateId: id,
-      name: template.name,
-      category: template.category,
-      subcategory: template.subcategory,
-      basePrompt: template.basePrompt,
-      style: template.style,
-      background: template.background,
-      lighting: template.lighting,
-    }),
+    body: JSON.stringify(requestBody),
   });
   
   if (!response.ok) {
     throw new Error('Failed to update template');
   }
-  
-  // Don't try to parse response - just return void
 }
 
 // DELETE template
