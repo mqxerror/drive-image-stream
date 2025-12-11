@@ -32,11 +32,9 @@ import {
   createTemplate, 
   updateTemplate, 
   deleteTemplate,
-  type NocoDBTemplate 
-} from "@/services/nocodbTemplates";
+  type Template 
+} from "@/services/templateApi";
 import { useToast } from "@/hooks/use-toast";
-
-type Template = NocoDBTemplate;
 
 const Templates = () => {
   const { toast } = useToast();
