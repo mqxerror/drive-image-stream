@@ -424,7 +424,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
             <Label>Name *</Label>
             <Input
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Template name"
             />
           </div>
@@ -434,7 +434,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
               <Label>Category</Label>
               <Select 
                 value={formData.category} 
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -450,7 +450,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
               <Label>Subcategory</Label>
               <Input
                 value={formData.subcategory}
-                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
                 placeholder="e.g., Rings, Necklaces"
               />
             </div>
@@ -461,7 +461,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
               <Label>Style</Label>
               <Select 
                 value={formData.style} 
-                onValueChange={(value) => setFormData({ ...formData, style: value })}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, style: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select style" />
@@ -477,7 +477,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
               <Label>Background</Label>
               <Select 
                 value={formData.background} 
-                onValueChange={(value) => setFormData({ ...formData, background: value })}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, background: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select background" />
@@ -495,7 +495,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
             <Label>Lighting</Label>
             <Input
               value={formData.lighting}
-              onChange={(e) => setFormData({ ...formData, lighting: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, lighting: e.target.value }))}
               placeholder="e.g., Studio softbox, Natural daylight"
             />
           </div>
@@ -504,7 +504,7 @@ function TemplateFormModal({ open, onOpenChange, template, onSave }: TemplateFor
             <Label>Base Prompt</Label>
             <Textarea
               value={formData.basePrompt}
-              onChange={(e) => setFormData({ ...formData, basePrompt: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, basePrompt: e.target.value }))}
               placeholder="Enter the base prompt for image optimization..."
               rows={6}
             />
