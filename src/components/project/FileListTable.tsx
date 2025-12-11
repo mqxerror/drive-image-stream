@@ -265,39 +265,44 @@ export function FileListTable({
       return;
     }
 
-    // Build files array with fileId and fileName
-    const selectedFiles = validIds.map(id => {
+    // Build imageIds array and imageNames object
+    const imageIds: string[] = [];
+    const imageNames: Record<string, string> = {};
+    
+    validIds.forEach(id => {
       const file = files.find(f => f.id === id);
-      return {
-        fileId: id,
-        fileName: file?.name || `image-${id}`,
-      };
+      imageIds.push(id);
+      imageNames[id] = file?.name || `image-${id}`;
     });
+
+    console.log('Sending to queue:', { imageIds, imageNames });
 
     setIsProcessing(true);
     try {
-      // First add selected images to queue
-      const addResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/add-to-queue', {
+      // Step 1: Add to queue via /trial endpoint
+      const addResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: selectedFiles }),
+        body: JSON.stringify({ imageIds, imageNames }),
       });
 
       if (!addResponse.ok) {
         const errorText = await addResponse.text();
-        console.error('Add to queue failed:', errorText);
+        console.error('Queue error:', errorText);
         throw new Error('Failed to add to queue');
       }
 
+      const addResult = await addResponse.json();
+      console.log('Queue result:', addResult);
+
       toast.success(`${validIds.length} images added to queue`);
 
-      // Then trigger processing
-      const processResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/start-processing', {
+      // Step 2: Start processing
+      const processResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
-      // Don't throw error if process fails - queue was added successfully
       if (processResponse.ok) {
         toast.success('Processing started!');
       }
