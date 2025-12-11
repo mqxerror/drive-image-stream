@@ -585,14 +585,15 @@ export function FileListTable({
                           }}
                         />
                       </div>
-                      {/* Zoom popup on hover */}
-                      <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block">
+                      {/* Zoom popup on hover - use lh3 URL which supports CORS */}
+                      <div className="absolute left-full ml-2 top-0 z-50 hidden group-hover:block pointer-events-none">
                         <img
-                          src={file.thumbnailUrl.replace('sz=w200', 'sz=w400').replace('sz=w100', 'sz=w400')}
+                          src={`https://lh3.googleusercontent.com/d/${file.id}=s400`}
                           alt={file.name}
                           className="w-64 h-64 object-contain bg-background rounded-lg shadow-2xl border border-border"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            // Fallback to drive thumbnail if lh3 fails
+                            (e.target as HTMLImageElement).src = file.thumbnailUrl.replace('sz=w200', 'sz=w400').replace('sz=w100', 'sz=w400');
                           }}
                         />
                       </div>
