@@ -214,11 +214,11 @@ export async function updateTemplate(template: Partial<Template> & { id: number 
       name: template.name,
       category: template.category,
       subcategory: template.subcategory,
-      basePrompt: template.basePrompt,
+      base_prompt: template.basePrompt,
       style: template.style,
       background: template.background,
       lighting: template.lighting,
-      isActive: template.isActive,
+      is_active: template.isActive,
     }),
   });
   if (!response.ok) throw new Error("Failed to update template");
