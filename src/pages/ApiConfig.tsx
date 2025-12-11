@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useApiConfig, defaultApiConfig, ApiConfig } from '@/hooks/useApiConfig';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, Loader2, RotateCcw, Save, Settings2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, RotateCcw, Save, Settings2, Database } from 'lucide-react';
+import { getTemplates } from '@/services/nocodbTemplates';
 
 type EndpointName = keyof ApiConfig['endpoints'];
 
@@ -52,11 +53,22 @@ const getTestConfig = (name: EndpointName): { method: string; body?: object } =>
   }
 };
 
+// NocoDB config from environment
+const nocodbConfig = {
+  baseUrl: import.meta.env.VITE_NOCODB_BASE_URL || 'NOT SET',
+  token: import.meta.env.VITE_NOCODB_API_TOKEN ? 'SET (hidden)' : 'NOT SET',
+  tableId: import.meta.env.VITE_NOCODB_TEMPLATES_TABLE_ID || 'NOT SET',
+};
+
 export default function ApiConfigPage() {
   const { config, updateConfig, resetToDefaults } = useApiConfig();
   const [localConfig, setLocalConfig] = useState<ApiConfig>(config);
   const [statuses, setStatuses] = useState<EndpointStatus>({});
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // NocoDB debug state
+  const [nocodbStatus, setNocodbStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [nocodbResult, setNocodbResult] = useState<string>('');
 
   const handleBaseUrlChange = (value: string) => {
     setLocalConfig(prev => ({ ...prev, baseUrl: value }));
@@ -139,9 +151,39 @@ export default function ApiConfigPage() {
     toast.success('Reset to default configuration');
   };
 
+  const testNocodbConnection = async () => {
+    setNocodbStatus('testing');
+    setNocodbResult('');
+    
+    try {
+      const templates = await getTemplates();
+      setNocodbStatus('success');
+      setNocodbResult(`Success! Found ${templates.length} templates.`);
+      toast.success(`NocoDB connection successful - ${templates.length} templates found`);
+    } catch (error) {
+      setNocodbStatus('error');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      setNocodbResult(`Error: ${errorMsg}`);
+      toast.error(`NocoDB connection failed: ${errorMsg}`);
+    }
+  };
+
   const getStatusIcon = (name: string) => {
     const status = statuses[name];
     switch (status) {
+      case 'testing':
+        return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+      case 'success':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'error':
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      default:
+        return null;
+    }
+  };
+
+  const getNocodbStatusIcon = () => {
+    switch (nocodbStatus) {
       case 'testing':
         return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
       case 'success':
@@ -169,6 +211,53 @@ export default function ApiConfigPage() {
         </div>
 
         <div className="space-y-6">
+          {/* NocoDB Debug Section */}
+          <Card className="border-primary/20">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                <CardTitle>NocoDB Debug</CardTitle>
+              </div>
+              <CardDescription>
+                Test the direct NocoDB API connection for template management
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 text-sm">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <span className="font-medium">Base URL</span>
+                  <code className="text-xs bg-background px-2 py-1 rounded">{nocodbConfig.baseUrl}</code>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <span className="font-medium">API Token</span>
+                  <code className="text-xs bg-background px-2 py-1 rounded">{nocodbConfig.token}</code>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <span className="font-medium">Table ID</span>
+                  <code className="text-xs bg-background px-2 py-1 rounded">{nocodbConfig.tableId}</code>
+                </div>
+              </div>
+              
+              {nocodbResult && (
+                <div className={`p-3 rounded-lg text-sm ${nocodbStatus === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-destructive/10 text-destructive'}`}>
+                  {nocodbResult}
+                </div>
+              )}
+              
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={testNocodbConnection} 
+                  disabled={nocodbStatus === 'testing'}
+                  variant="outline"
+                >
+                  {nocodbStatus === 'testing' && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Test NocoDB Connection
+                </Button>
+                {getNocodbStatusIcon()}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Base URL */}
           <Card>
             <CardHeader>
