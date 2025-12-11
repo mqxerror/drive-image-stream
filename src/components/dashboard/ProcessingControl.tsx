@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useApiConfig } from "@/hooks/useApiConfig";
-import { triggerProcessing } from "@/services/api";
+import { triggerProcessing, clearQueue } from "@/services/api";
 import { toast } from "sonner";
 
 interface ProcessingControlProps {
@@ -25,8 +25,10 @@ interface ProcessingControlProps {
 export function ProcessingControl({ onProcessingStarted }: ProcessingControlProps) {
   const { getEndpoint } = useApiConfig();
   const [queueCount, setQueueCount] = useState(0);
+  const [queuedCount, setQueuedCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string>("all");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
@@ -41,6 +43,10 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
         const queue = data.queue || data || [];
         setQueueCount(queue.length);
         
+        // Count queued items specifically
+        const queuedItems = queue.filter((item: any) => item.status === "queued");
+        setQueuedCount(queuedItems.length);
+        
         // Check if any are currently processing
         const processingItems = queue.filter(
           (item: any) => item.status === "processing" || item.status === "optimizing"
@@ -52,11 +58,17 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
     }
   };
 
+  // Auto-refresh when processing is active
   useEffect(() => {
     fetchQueueStatus();
-    const interval = setInterval(fetchQueueStatus, 5000);
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (isProcessing) {
+      const interval = setInterval(fetchQueueStatus, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isProcessing]);
 
   const getProcessCount = () => {
     if (selectedOption === "all") return queueCount;
@@ -125,7 +137,29 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
   };
 
   const handleClearQueue = async () => {
-    toast.info("Clear queue functionality coming soon");
+    if (queuedCount === 0) {
+      toast.info("No queued items to clear");
+      return;
+    }
+    
+    if (!confirm(`Clear ${queuedCount} queued items? Processing items will continue.`)) return;
+    
+    setIsClearing(true);
+    try {
+      const result = await clearQueue();
+      if (result.success) {
+        toast.success(`Cleared ${result.deletedCount} items from queue`);
+        await fetchQueueStatus();
+        onProcessingStarted?.(); // Refresh parent
+      } else {
+        toast.error("Failed to clear queue");
+      }
+    } catch (error) {
+      console.error("Clear queue error:", error);
+      toast.error("Failed to clear queue");
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   if (queueCount === 0 && !isProcessing) {
@@ -245,9 +279,13 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
               size="sm"
               className="h-7 text-xs"
               onClick={handleClearQueue}
-              disabled={isProcessing}
+              disabled={isClearing || queuedCount === 0}
             >
-              <Trash2 className="mr-1 h-3 w-3" />
+              {isClearing ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <Trash2 className="mr-1 h-3 w-3" />
+              )}
               Clear
             </Button>
           </div>

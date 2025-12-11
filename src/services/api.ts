@@ -403,6 +403,20 @@ export async function processBatch(projectId: number, fileIds: string[]): Promis
   };
 }
 
+// Clear queue - removes all queued items
+export async function clearQueue(): Promise<{ success: boolean; deletedCount: number }> {
+  const response = await fetch("https://automator.pixelcraftedmedia.com/webhook/image-optimizer/queue-clear", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to clear queue");
+  const data = await response.json();
+  return {
+    success: data.success !== false,
+    deletedCount: data.deletedCount ?? 0,
+  };
+}
+
 // Redo image
 export async function redoImage(fileId: string, fileName: string): Promise<{ success: boolean; queueId: number }> {
   const response = await fetch(getEndpoint('redo'), {
@@ -437,6 +451,7 @@ export const api = {
   getHistory,
   triggerProcessing,
   processBatch,
+  clearQueue,
   redoImage,
 };
 
