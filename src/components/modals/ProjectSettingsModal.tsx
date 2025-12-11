@@ -99,7 +99,9 @@ export function ProjectSettingsModal({
       
       if (result.success) {
         toast.success("Settings saved successfully");
+        // CRITICAL: Wait for parent to refresh data BEFORE closing
         await onSave(formData);
+        // Now close after parent has refreshed
         onOpenChange(false);
       } else {
         toast.error(result.message || "Failed to save settings");

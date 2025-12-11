@@ -149,8 +149,10 @@ export function ProcessingControl({ onProcessingStarted }: ProcessingControlProp
       const result = await clearQueue();
       if (result.success) {
         toast.success(`Cleared ${result.deletedCount} items from queue`);
+        // Refresh queue status
         await fetchQueueStatus();
-        onProcessingStarted?.(); // Refresh parent
+        // Refresh parent to update stats
+        onProcessingStarted?.();
       } else {
         toast.error("Failed to clear queue");
       }

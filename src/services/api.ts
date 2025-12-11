@@ -410,11 +410,23 @@ export async function clearQueue(): Promise<{ success: boolean; deletedCount: nu
     headers: { "Content-Type": "application/json" },
   });
   if (!response.ok) throw new Error("Failed to clear queue");
-  const data = await response.json();
-  return {
-    success: data.success !== false,
-    deletedCount: data.deletedCount ?? 0,
-  };
+  
+  // Handle empty response body
+  const text = await response.text();
+  if (!text) {
+    return { success: true, deletedCount: 0 };
+  }
+  
+  try {
+    const data = JSON.parse(text);
+    return {
+      success: data.success !== false,
+      deletedCount: data.deletedCount ?? 0,
+    };
+  } catch {
+    // If JSON parsing fails but response was OK, assume success
+    return { success: true, deletedCount: 0 };
+  }
 }
 
 // Redo image

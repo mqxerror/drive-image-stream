@@ -105,15 +105,16 @@ const Dashboard = () => {
       {settingsProject && (
         <ProjectSettingsModal
           open={!!settingsProject}
-          onOpenChange={(open) => !open && setSettingsProject(null)}
+          onOpenChange={(open) => {
+            if (!open) setSettingsProject(null);
+          }}
           project={settingsProject}
           templates={templates}
           onSave={async (updates) => {
-            // Update the settingsProject with new values immediately
-            setSettingsProject(prev => prev ? { ...prev, ...updates } : null);
-            // Then refresh to get latest from server
+            // First refresh to get latest from server
             await refresh();
-            setSettingsProject(null);
+            // Now clear the settings project after refresh completes
+            // (Dialog will close via onOpenChange from handleSave)
           }}
         />
       )}
