@@ -84,6 +84,7 @@ export function ProjectSettingsModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      console.log('DEBUG ProjectSettingsModal - formData:', JSON.stringify(formData, null, 2));
       await updateProject(project.id, formData);
       toast.success("Settings saved successfully");
       // CRITICAL: Wait for parent to refresh data BEFORE closing
