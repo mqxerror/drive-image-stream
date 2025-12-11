@@ -41,7 +41,25 @@ const Dashboard = () => {
   };
 
   const handleDelete = async (projectId: number) => {
-    toast.info("Delete functionality coming soon");
+    if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/project-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete');
+      
+      toast.success('Project deleted successfully');
+      refresh();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete project');
+    }
   };
 
   if (isLoading) {
