@@ -133,7 +133,7 @@ export function FileListTable({
         const historyItem = historyMap.get(img.id);
 
         let status: FileItem["status"] = "pending";
-        if (historyItem?.optimizedDriveId) {
+        if (img.status === "optimized" || img.isOptimized || historyItem?.optimizedDriveId) {
           status = "optimized";
         } else if (queueItem) {
           if (queueItem.status === "queued") status = "queued";
@@ -141,21 +141,24 @@ export function FileListTable({
           else if (queueItem.status === "failed") status = "failed";
         }
 
+        // Get prompt from project-images API first, then fall back to history
+        const prompt = img.prompt || historyItem?.generatedPrompt || historyItem?.prompt || undefined;
+
         return {
           id: img.id,
           name: img.name,
           thumbnailUrl: img.thumbnailUrl,
           status,
-          resultThumbnailUrl: historyItem?.optimizedDriveId
+          resultThumbnailUrl: img.resultThumbnail || img.optimizedThumbnail || (historyItem?.optimizedDriveId
             ? `https://drive.google.com/thumbnail?id=${historyItem.optimizedDriveId}&sz=w100`
-            : undefined,
-          cost: historyItem?.cost,
-          timeSeconds: historyItem?.timeSeconds,
-          prompt: historyItem?.generatedPrompt || undefined,
-          optimizedDriveId: historyItem?.optimizedDriveId || undefined,
-          optimizedUrl: historyItem?.optimizedUrl || undefined,
-          completedAt: historyItem?.completedAt,
-          resolution: historyItem?.resolution,
+            : undefined),
+          cost: img.cost ?? historyItem?.cost,
+          timeSeconds: img.processingTime ?? historyItem?.timeSeconds,
+          prompt,
+          optimizedDriveId: img.optimizedDriveId || historyItem?.optimizedDriveId || undefined,
+          optimizedUrl: img.optimizedUrl || historyItem?.optimizedUrl || undefined,
+          completedAt: img.completedAt || historyItem?.completedAt,
+          resolution: img.resolution || historyItem?.resolution,
         };
       });
 

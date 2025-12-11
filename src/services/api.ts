@@ -91,6 +91,7 @@ export interface HistoryItem {
   thumbnailUrl: string | null;
   errorMessage: string | null;
   generatedPrompt?: string | null;
+  prompt?: string | null;
 }
 
 // Transform functions for snake_case to camelCase conversion
