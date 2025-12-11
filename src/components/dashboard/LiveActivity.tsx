@@ -24,9 +24,10 @@ const statusConfig: Record<string, { label: string; className: string; animated?
 
 interface LiveActivityProps {
   refreshTrigger?: number;
+  onClear?: () => void;
 }
 
-export function LiveActivity({ refreshTrigger }: LiveActivityProps) {
+export function LiveActivity({ refreshTrigger, onClear }: LiveActivityProps) {
   const { getEndpoint } = useApiConfig();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +69,10 @@ export function LiveActivity({ refreshTrigger }: LiveActivityProps) {
   };
 
   useEffect(() => {
+    // When refreshTrigger changes (e.g., after clearing queue), immediately clear items then fetch
+    if (refreshTrigger && refreshTrigger > 0) {
+      setItems([]); // Clear immediately for responsive UI
+    }
     fetchActivity();
   }, [fetchActivity, refreshTrigger]);
 
