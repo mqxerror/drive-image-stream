@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { StatusBadge } from "@/components/StatusBadge";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Project } from "@/services/api";
 
@@ -115,23 +115,6 @@ export function ProjectsTable({
     );
   }
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "draft":
-        return "bg-muted text-muted-foreground border-border";
-      case "processing":
-      case "trial":
-        return "bg-warning/20 text-warning border-warning/30";
-      case "completed":
-        return "bg-success/20 text-success border-success/30";
-      case "failed":
-        return "bg-destructive/20 text-destructive border-destructive/30";
-      case "paused":
-        return "bg-info/20 text-info border-info/30";
-      default:
-        return "bg-muted text-muted-foreground border-border";
-    }
-  };
 
   return (
     <div className="rounded-lg border border-border/40 bg-card/50 overflow-hidden">
@@ -147,7 +130,7 @@ export function ProjectsTable({
             </TableHead>
             <TableHead className="w-12 py-2 px-2 text-xs">Preview</TableHead>
             <TableHead className="py-2 px-2 text-xs">Project</TableHead>
-            <TableHead className="py-2 px-2 text-xs">Status</TableHead>
+            
             <TableHead className="py-2 px-2 text-xs text-center">Images</TableHead>
             <TableHead className="py-2 px-2 text-xs text-right">Cost</TableHead>
             <TableHead className="py-2 px-2 text-xs text-right">Actions</TableHead>
@@ -174,11 +157,6 @@ export function ProjectsTable({
               </TableCell>
               <TableCell className="py-2 px-2">
                 <span className="text-xs font-medium">{project.name}</span>
-              </TableCell>
-              <TableCell className="py-2 px-2">
-                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${getStatusBadgeClass(project.status)}`}>
-                  {project.status}
-                </span>
               </TableCell>
               <TableCell className="py-2 px-2 text-center">
                 <span className="text-xs text-muted-foreground">
