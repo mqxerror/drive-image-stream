@@ -257,8 +257,8 @@ export async function createProject(project: Partial<Project>): Promise<Project>
 }
 
 // Update project - uses /project-update endpoint
-export async function updateProject(id: number, project: Partial<Project>): Promise<{ success: boolean; message: string; project?: Project }> {
-  const response = await fetch(getEndpoint('projectUpdate'), {
+export async function updateProject(id: number, project: Partial<Project>): Promise<void> {
+  const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/project-update', {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -275,17 +275,11 @@ export async function updateProject(id: number, project: Partial<Project>): Prom
     }),
   });
   
-  const data = await response.json();
+  if (!response.ok) {
+    throw new Error("Failed to update project");
+  }
   
-  // Handle various success response formats from the API
-  // API may return: { success: true }, empty object, or just the project data
-  const isSuccess = response.ok && (data.success === true || data.success === undefined || Object.keys(data).length === 0);
-  
-  return {
-    success: isSuccess,
-    message: data.message ?? (isSuccess ? "Project updated successfully" : "Failed to update project"),
-    project: data.project ? transformProject(data.project) : undefined,
-  };
+  // Don't parse response - just return void
 }
 
 // Project Images - fetches images from Google Drive folder with enriched data
