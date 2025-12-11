@@ -67,7 +67,7 @@ export interface FileItem {
 interface FileListTableProps {
   projectId: number;
   trialCount: number;
-  onStartTrial: (selectedImageIds: string[]) => void;
+  onStartTrial: (selectedImageIds: string[]) => Promise<void>;
   onQueueAndProcess?: (selectedImageIds: string[]) => void;
   isTrialLoading?: boolean;
   inputFolderId?: string | null;
@@ -204,7 +204,7 @@ export function FileListTable({
     return pendingFiles.length > 0 && pendingFiles.every(f => selectedIds.has(f.id));
   };
 
-  const handleStartTrial = () => {
+  const handleStartTrial = async () => {
     // Only queue non-optimized images
     const validIds = Array.from(selectedIds).filter(id => {
       const file = files.find(f => f.id === id);
@@ -216,11 +216,18 @@ export function FileListTable({
       return;
     }
     
-    onStartTrial(validIds);
-    toast.success(`${validIds.length} images added to queue`, {
-      description: "Go to Dashboard to start processing",
-    });
-    setSelectedIds(new Set());
+    // Call the parent's onStartTrial and wait for it to complete
+    try {
+      await onStartTrial(validIds);
+      // Only show success and clear selection after API completes
+      toast.success(`${validIds.length} images added to queue`, {
+        description: "Go to Dashboard to start processing",
+      });
+      setSelectedIds(new Set());
+    } catch (error) {
+      // Toast will be shown by parent component on error
+      console.error("Add to queue failed:", error);
+    }
   };
 
   const handleQueueAndProcess = async () => {
