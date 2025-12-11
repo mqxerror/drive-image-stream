@@ -330,25 +330,29 @@ export function FileListTable({
 
   const handleReprocess = async (fileId: string, fileName: string, customPrompt: string) => {
     try {
-      const response = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/add-to-queue', {
+      // Step 1: Add to queue using /trial endpoint (which works)
+      const addResponse = await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fileId,
-          fileName,
-          customPrompt,
+          imageIds: [fileId],
+          imageNames: { [fileId]: fileName },
+          // Note: customPrompt will be handled when we fix the n8n workflow
         }),
       });
 
-      if (response.ok) {
-        toast.success('Image added to queue for reprocessing!');
-        await fetchData(); // Refresh the list
-      } else {
-        throw new Error('Failed to add to queue');
-      }
+      if (!addResponse.ok) throw new Error('Failed to add to queue');
+
+      // Step 2: Trigger processing
+      await fetch('https://automator.pixelcraftedmedia.com/webhook/image-optimizer/process', {
+        method: 'POST',
+      });
+
+      toast.success('Image queued for reprocessing!');
+      await fetchData(); // Refresh the list
     } catch (error) {
       console.error('Reprocess error:', error);
-      toast.error('Failed to add image to queue');
+      toast.error('Failed to reprocess image');
       throw error;
     }
   };
